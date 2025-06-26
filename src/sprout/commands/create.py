@@ -1,11 +1,13 @@
 """Implementation of the create command."""
 
 from pathlib import Path
+from typing import Never
 
 import typer
 from rich.console import Console
 
 from sprout.exceptions import SproutError
+from sprout.types import BranchName
 from sprout.utils import (
     branch_exists,
     ensure_sprout_dir,
@@ -19,7 +21,7 @@ from sprout.utils import (
 console = Console()
 
 
-def create_worktree(branch_name: str) -> None:
+def create_worktree(branch_name: BranchName) -> Never:
     """Create a new worktree with development environment."""
     # Check prerequisites
     if not is_git_repository():
@@ -82,3 +84,6 @@ def create_worktree(branch_name: str) -> None:
     console.print(f"\n[green]✅ Workspace '{branch_name}' created successfully![/green]\n")
     console.print("Navigate to your new environment with:")
     console.print(f"  [cyan]cd {worktree_path.relative_to(Path.cwd())}[/cyan]")
+
+    # Exit successfully
+    raise typer.Exit(0)

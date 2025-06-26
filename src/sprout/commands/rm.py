@@ -1,10 +1,13 @@
 """Implementation of the rm command."""
 
+from typing import Never
+
 import typer
 from rich.console import Console
 from rich.prompt import Confirm
 
 from sprout.exceptions import SproutError
+from sprout.types import BranchName
 from sprout.utils import (
     get_sprout_dir,
     is_git_repository,
@@ -15,7 +18,7 @@ from sprout.utils import (
 console = Console()
 
 
-def remove_worktree(branch_name: str) -> None:
+def remove_worktree(branch_name: BranchName) -> Never:
     """Remove a development environment."""
     if not is_git_repository():
         console.print("[red]Error: Not in a git repository[/red]")
@@ -64,3 +67,6 @@ def remove_worktree(branch_name: str) -> None:
             console.print(
                 "[yellow]Note: The worktree has been removed, but the branch still exists[/yellow]"
             )
+
+    # Exit successfully
+    raise typer.Exit(0)

@@ -1,4 +1,8 @@
-.PHONY: lint format test clean help setup
+.PHONY: all-checks lint format test test-cov typecheck clean help setup
+
+# Run all quality checks
+all-checks: lint typecheck test
+	@echo "All checks passed!"
 
 # Lint code using ruff
 lint:
@@ -20,6 +24,11 @@ test-cov:
 	@echo "Running tests with coverage..."
 	uv run pytest --cov=sprout --cov-report=term-missing
 
+# Run type checking with mypy
+typecheck:
+	@echo "Running type checking with mypy..."
+	uv run mypy src
+
 # Clean up temporary files
 clean:
 	@echo "Cleaning up..."
@@ -38,10 +47,12 @@ setup:
 # Show help
 help:
 	@echo "Available targets:"
+	@echo "  make all-checks  - Run all quality checks (lint, typecheck, test)"
 	@echo "  make lint        - Run code linter (ruff)"
 	@echo "  make format      - Format code (ruff)"
 	@echo "  make test        - Run tests"
 	@echo "  make test-cov    - Run tests with coverage report"
+	@echo "  make typecheck   - Run type checking (mypy)"
 	@echo "  make clean       - Clean up temporary files"
 	@echo "  make setup       - Install development dependencies"
 	@echo "  make help        - Show this help message"

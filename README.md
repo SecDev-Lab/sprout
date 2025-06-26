@@ -117,6 +117,9 @@ make lint
 
 # Format code
 make format
+
+# Run type checking
+make typecheck
 ```
 
 ## Requirements

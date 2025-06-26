@@ -8,6 +8,7 @@ from sprout.commands.create import create_worktree
 from sprout.commands.ls import list_worktrees
 from sprout.commands.path import get_worktree_path
 from sprout.commands.rm import remove_worktree
+from sprout.types import BranchName
 
 app = typer.Typer(
     name="sprout",
@@ -41,7 +42,7 @@ def callback(
 
 @app.command()
 def create(
-    branch_name: str = typer.Argument(
+    branch_name: BranchName = typer.Argument(
         ...,
         help="Name of the branch to create worktree for",
     ),
@@ -58,7 +59,7 @@ def ls() -> None:
 
 @app.command()
 def rm(
-    branch_name: str = typer.Argument(
+    branch_name: BranchName = typer.Argument(
         ...,
         help="Name of the branch to remove",
     ),
@@ -69,7 +70,7 @@ def rm(
 
 @app.command()
 def path(
-    branch_name: str = typer.Argument(
+    branch_name: BranchName = typer.Argument(
         ...,
         help="Name of the branch to get path for",
     ),

@@ -6,11 +6,16 @@ import re
 import socket
 import subprocess
 from pathlib import Path
-from typing import Set
+from typing import TypeAlias
 
 from rich.console import Console
 
 from sprout.exceptions import SproutError
+from sprout.types import BranchName
+
+# Type aliases
+PortNumber: TypeAlias = int
+PortSet: TypeAlias = set[PortNumber]
 
 console = Console()
 
@@ -43,7 +48,7 @@ def get_git_root() -> Path:
     return Path(result.stdout.strip())
 
 
-def run_command(cmd: list[str], check: bool = True) -> subprocess.CompletedProcess:
+def run_command(cmd: list[str], check: bool = True) -> subprocess.CompletedProcess[str]:
     """Run a command and return the result."""
     try:
         return subprocess.run(
@@ -68,9 +73,9 @@ def ensure_sprout_dir() -> Path:
     return sprout_dir
 
 
-def get_used_ports() -> Set[int]:
+def get_used_ports() -> PortSet:
     """Get all ports currently used by sprout worktrees."""
-    used_ports = set()
+    used_ports: PortSet = set()
     sprout_dir = get_sprout_dir()
 
     if not sprout_dir.exists():
@@ -93,7 +98,7 @@ def get_used_ports() -> Set[int]:
     return used_ports
 
 
-def is_port_available(port: int) -> bool:
+def is_port_available(port: PortNumber) -> bool:
     """Check if a port is available for binding."""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         try:
@@ -103,7 +108,7 @@ def is_port_available(port: int) -> bool:
             return False
 
 
-def find_available_port() -> int:
+def find_available_port() -> PortNumber:
     """Find an available port that's not used by sprout or system."""
     used_ports = get_used_ports()
     max_attempts = 1000
@@ -128,13 +133,13 @@ def parse_env_template(template_path: Path) -> str:
     except OSError as e:
         raise SproutError(f"Failed to read .env.example: {e}") from e
 
-    lines = []
+    lines: list[str] = []
     # Track used ports within this file to avoid duplicates
-    file_ports = set()
+    file_ports: PortSet = set()
 
     for line in content.splitlines():
         # Process {{ auto_port() }} placeholders
-        def replace_auto_port(match: re.Match) -> str:
+        def replace_auto_port(match: re.Match[str]) -> str:
             port = find_available_port()
             while port in file_ports:
                 port = find_available_port()
@@ -144,7 +149,7 @@ def parse_env_template(template_path: Path) -> str:
         line = re.sub(r"{{\s*auto_port\(\)\s*}}", replace_auto_port, line)
 
         # Process {{ VARIABLE }} placeholders
-        def replace_variable(match: re.Match) -> str:
+        def replace_variable(match: re.Match[str]) -> str:
             var_name = match.group(1).strip()
             # Check environment variable first
             value = os.environ.get(var_name)
@@ -160,13 +165,15 @@ def parse_env_template(template_path: Path) -> str:
     return "\n".join(lines)
 
 
-def worktree_exists(branch_name: str) -> bool:
+def worktree_exists(branch_name: BranchName) -> bool:
     """Check if a worktree already exists for the given branch."""
     worktree_path = get_sprout_dir() / branch_name
     return worktree_path.exists()
 
 
-def branch_exists(branch_name: str) -> bool:
+def branch_exists(branch_name: BranchName) -> bool:
     """Check if a git branch exists."""
-    result = run_command(["git", "rev-parse", "--verify", f"refs/heads/{branch_name}"], check=False)
+    result = run_command(
+        ["git", "rev-parse", "--verify", f"refs/heads/{branch_name}"], check=False
+    )
     return result.returncode == 0

@@ -2,12 +2,14 @@
 
 from datetime import datetime
 from pathlib import Path
+from typing import Never
 
 import typer
 from rich.console import Console
 from rich.table import Table
 
 from sprout.exceptions import SproutError
+from sprout.types import WorktreeInfo
 from sprout.utils import get_sprout_dir, is_git_repository, run_command
 
 console = Console()
@@ -29,8 +31,8 @@ def list_worktrees() -> None:
         raise typer.Exit(1) from e
 
     # Parse worktree output
-    worktrees = []
-    current_worktree = {}
+    worktrees: list[WorktreeInfo] = []
+    current_worktree: WorktreeInfo = {}
 
     for line in result.stdout.strip().split("\n"):
         if not line:
@@ -50,7 +52,7 @@ def list_worktrees() -> None:
         worktrees.append(current_worktree)
 
     # Filter for sprout-managed worktrees
-    sprout_worktrees = []
+    sprout_worktrees: list[WorktreeInfo] = []
     current_path = Path.cwd().resolve()
 
     for wt in worktrees:
@@ -71,7 +73,7 @@ def list_worktrees() -> None:
     if not sprout_worktrees:
         console.print("[yellow]No sprout-managed worktrees found.[/yellow]")
         console.print("Use 'sprout create <branch-name>' to create one.")
-        return
+        return None
 
     # Create table
     table = Table(title="Sprout Worktrees", show_lines=True)
@@ -84,7 +86,8 @@ def list_worktrees() -> None:
         branch = wt.get("branch", wt.get("head", "detached"))
         path = str(wt["path"].relative_to(Path.cwd()))
         status = "[green]● current[/green]" if wt["is_current"] else ""
-        modified = wt["modified"].strftime("%Y-%m-%d %H:%M") if wt["modified"] else "N/A"
+        modified_dt = wt.get("modified")
+        modified = modified_dt.strftime("%Y-%m-%d %H:%M") if modified_dt else "N/A"
 
         table.add_row(branch, path, status, modified)
 
