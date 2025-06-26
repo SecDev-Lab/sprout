@@ -79,9 +79,10 @@ Show the version of sprout.
 
 sprout supports two types of placeholders in `.env.example`:
 
-1. **User Input/Environment Variables**: `{{ VARIABLE_NAME }}`
-   - First checks for existing environment variables
-   - Prompts for user input if not found
+1. **Variable Placeholders**: `{{ VARIABLE_NAME }}`
+   - **First**: Checks if the variable exists in your environment (e.g., `export API_KEY=xxx`)
+   - **Then**: If not found in environment, prompts for user input
+   - Example: `{{ API_KEY }}` will use `$API_KEY` if set, otherwise asks you to enter it
 
 2. **Auto Port Assignment**: `{{ auto_port() }}`
    - Automatically assigns available ports
@@ -92,6 +93,21 @@ sprout supports two types of placeholders in `.env.example`:
    - NOT processed by sprout - passed through as-is
    - Useful for Docker Compose variable substitution
    - Example: `${DB_NAME:-default}` remains unchanged in generated `.env`
+
+### Environment Variable Resolution Example
+
+```bash
+# Set environment variable
+export API_KEY="my-secret-key"
+
+# Create sprout environment - API_KEY will be automatically used
+sprout create feature-branch
+# → API_KEY in .env will be set to "my-secret-key" without prompting
+
+# For unset variables, sprout will prompt
+sprout create another-branch
+# → Enter a value for 'DATABASE_URL': [user input required]
+```
 
 ## Development
 
