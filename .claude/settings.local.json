@@ -89,7 +89,11 @@
       "WebFetch(domain:localhost)",
       "WebFetch(domain:github.com)",
       "WebFetch(domain:docs.python.org)",
-      "WebFetch(domain:pypi.org)"
+      "WebFetch(domain:pypi.org)",
+      "Bash(mkdir:*)",
+      "Bash(make:*)",
+      "Bash(uv sync:*)",
+      "Bash(uv run:*)"
     ],
     "deny": []
   },

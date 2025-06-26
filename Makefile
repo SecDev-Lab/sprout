@@ -3,12 +3,12 @@
 # Lint code using ruff
 lint:
 	@echo "Running linter..."
-	uv run ruff check .
+	uv run ruff check
 
 # Format code using ruff
 format:
 	@echo "Formatting code..."
-	uv run ruff format .
+	uv run ruff check --fix
 
 # Run tests
 test:
@@ -18,7 +18,7 @@ test:
 # Run tests with coverage
 test-cov:
 	@echo "Running tests with coverage..."
-	uv run pytest --cov=. --cov-report=term-missing
+	uv run pytest --cov=sprout --cov-report=term-missing
 
 # Clean up temporary files
 clean:
