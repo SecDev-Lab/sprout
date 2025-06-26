@@ -121,7 +121,7 @@ make format
 
 ## Requirements
 
-- Python 3.8+
+- Python 3.11+
 - Git
 - Docker Compose (optional, for Docker-based workflows)
 
