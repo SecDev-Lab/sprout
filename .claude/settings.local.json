@@ -93,7 +93,8 @@
       "Bash(mkdir:*)",
       "Bash(make:*)",
       "Bash(uv sync:*)",
-      "Bash(uv run:*)"
+      "Bash(uv run:*)",
+      "Bash(paplay:*)"
     ],
     "deny": []
   },

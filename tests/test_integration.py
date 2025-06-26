@@ -1,6 +1,7 @@
 """Integration tests for sprout."""
 
 import subprocess
+from pathlib import Path
 
 import pytest
 from typer.testing import CliRunner
@@ -175,20 +176,19 @@ class TestIntegrationWorkflow:
         result = runner.invoke(app, ["path", "nonexistent"])
         assert result.exit_code == 1
 
-        # Test outside git repo first (before we remove .env.example)
-        non_git_dir = tmp_path / "not-a-repo"
-        non_git_dir.mkdir()
-        monkeypatch.chdir(non_git_dir)
-
-        result = runner.invoke(app, ["create", "branch"])
-        assert result.exit_code == 1
-        assert "Not in a git repository" in result.stdout
-
-        # Go back to git repo for the .env.example test
-        monkeypatch.chdir(git_repo)
-
         # Remove .env.example and try to create
         (git_repo / ".env.example").unlink()
         result = runner.invoke(app, ["create", "another-branch"])
         assert result.exit_code == 1
         assert ".env.example file not found" in result.stdout
+
+        # Test outside git repo using a separate temp directory
+        import tempfile
+        with tempfile.TemporaryDirectory() as non_git_tmpdir:
+            non_git_dir = Path(non_git_tmpdir) / "not-a-repo"
+            non_git_dir.mkdir()
+            monkeypatch.chdir(non_git_dir)
+
+            result = runner.invoke(app, ["create", "branch"])
+            assert result.exit_code == 1
+            assert "Not in a git repository" in result.stdout

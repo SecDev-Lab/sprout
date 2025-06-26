@@ -13,40 +13,28 @@ runner = CliRunner()
 class TestCreateCommand:
     """Test sprout create command."""
 
-    def test_create_success_new_branch(self, mocker):
+    def test_create_success_new_branch(self, mocker, tmp_path):
         """Test successful creation with new branch."""
+        # Set up test directory structure
+        project_dir = tmp_path / "project"
+        project_dir.mkdir()
+        sprout_dir = project_dir / ".sprout"
+        sprout_dir.mkdir()
+        env_example = project_dir / ".env.example"
+        env_example.write_text("TEST=value")
+
+        # Create the worktree directory that would be created by git command
+        worktree_dir = sprout_dir / "feature-branch"
+        worktree_dir.mkdir()
+
         # Mock prerequisites
         mocker.patch("sprout.commands.create.is_git_repository", return_value=True)
-        mocker.patch("sprout.commands.create.get_git_root", return_value=Path("/project"))
+        mocker.patch("sprout.commands.create.get_git_root", return_value=project_dir)
         mocker.patch("sprout.commands.create.worktree_exists", return_value=False)
         mocker.patch("sprout.commands.create.branch_exists", return_value=False)
-        mocker.patch(
-            "sprout.commands.create.ensure_sprout_dir", return_value=Path("/project/.sprout")
-        )
-
-        # Mock Path.cwd()
-        mocker.patch("pathlib.Path.cwd", return_value=Path("/project"))
-
-        # Mock file operations
-        mock_env_file = Mock()
+        mocker.patch("sprout.commands.create.ensure_sprout_dir", return_value=sprout_dir)
         mocker.patch("sprout.commands.create.parse_env_template", return_value="ENV_VAR=value")
-
-        # Create a more specific mock for worktree_path / ".env"
-        mock_worktree_path = Mock()
-        mock_worktree_path.__truediv__.return_value = mock_env_file
-        mock_worktree_path.relative_to.return_value = Path(".sprout/feature-branch")
-
-        # Mock ensure_sprout_dir to return a mock that creates our mock_worktree_path
-        mock_sprout_dir = Mock()
-        mock_sprout_dir.__truediv__.return_value = mock_worktree_path
-        mocker.patch("sprout.commands.create.ensure_sprout_dir", return_value=mock_sprout_dir)
-
-        # Mock env example
-        mock_env_example = Mock()
-        mock_env_example.exists.return_value = True
-        mock_git_root = Mock()
-        mock_git_root.__truediv__.return_value = mock_env_example
-        mocker.patch("sprout.commands.create.get_git_root", return_value=mock_git_root)
+        mocker.patch("pathlib.Path.cwd", return_value=project_dir)
 
         # Mock command execution
         mock_run = mocker.patch("sprout.commands.create.run_command")
@@ -56,8 +44,12 @@ class TestCreateCommand:
 
         assert result.exit_code == 0
         assert "✅ Workspace 'feature-branch' created successfully!" in result.stdout
-        mock_run.assert_called_once()
-        mock_env_file.write_text.assert_called_once()
+        assert mock_run.called
+
+        # Verify .env file was created
+        env_file = sprout_dir / "feature-branch" / ".env"
+        assert env_file.exists()
+        assert env_file.read_text() == "ENV_VAR=value"
 
     def test_create_not_in_git_repo(self, mocker):
         """Test error when not in git repository."""
@@ -101,62 +93,43 @@ class TestCreateCommand:
 class TestLsCommand:
     """Test sprout ls command."""
 
-    def test_ls_with_worktrees(self, mocker, monkeypatch):
+    def test_ls_with_worktrees(self, mocker, tmp_path):
         """Test listing worktrees."""
-        mocker.patch("sprout.commands.ls.is_git_repository", return_value=True)
+        # Set up test directory structure
+        project_dir = tmp_path / "project"
+        project_dir.mkdir()
+        sprout_dir = project_dir / ".sprout"
+        sprout_dir.mkdir()
 
-        # Create a proper mock for get_sprout_dir
-        mock_sprout_dir = Path("/project/.sprout")
-        mocker.patch("sprout.commands.ls.get_sprout_dir", return_value=mock_sprout_dir)
+        # Create worktree directories
+        feature1_dir = sprout_dir / "feature1"
+        feature1_dir.mkdir()
+        feature2_dir = sprout_dir / "feature2"
+        feature2_dir.mkdir()
+
+        # Mock prerequisites
+        mocker.patch("sprout.commands.ls.is_git_repository", return_value=True)
+        mocker.patch("sprout.commands.ls.get_sprout_dir", return_value=sprout_dir)
+        mocker.patch("pathlib.Path.cwd", return_value=project_dir)
 
         # Mock git worktree list output
         mock_result = Mock()
-        mock_result.stdout = """worktree /project/.sprout/feature1
+        mock_result.stdout = f"""worktree {feature1_dir}
 HEAD abc123
 branch refs/heads/feature1
 
-worktree /project/.sprout/feature2
+worktree {feature2_dir}
 HEAD def456
 branch refs/heads/feature2
 """
         mocker.patch("sprout.commands.ls.run_command", return_value=mock_result)
 
-        # Create mock paths with proper attributes
-        mock_path1 = Mock(spec=Path)
-        mock_path1.resolve.return_value = Path("/project/.sprout/feature1")
-        mock_path1.parent = mock_sprout_dir
-        mock_path1.exists.return_value = True
-        mock_path1.stat.return_value = Mock(st_mtime=1234567890)
-        mock_path1.relative_to.return_value = Path(".sprout/feature1")
-        mock_path1.__str__.return_value = ".sprout/feature1"
-
-        mock_path2 = Mock(spec=Path)
-        mock_path2.resolve.return_value = Path("/project/.sprout/feature2")
-        mock_path2.parent = mock_sprout_dir
-        mock_path2.exists.return_value = True
-        mock_path2.stat.return_value = Mock(st_mtime=1234567890)
-        mock_path2.relative_to.return_value = Path(".sprout/feature2")
-        mock_path2.__str__.return_value = ".sprout/feature2"
-
-        # Mock Path creation
-        def path_side_effect(path_str):
-            if path_str == "/project/.sprout/feature1":
-                return mock_path1
-            elif path_str == "/project/.sprout/feature2":
-                return mock_path2
-            return Path(path_str)
-
-        mocker.patch("sprout.commands.ls.Path", side_effect=path_side_effect)
-
-        # Mock current path
-        mock_cwd = Mock(spec=Path)
-        mock_cwd.resolve.return_value = Path("/project")
-        mocker.patch("pathlib.Path.cwd", return_value=mock_cwd)
-
         result = runner.invoke(app, ["ls"])
 
         assert result.exit_code == 0
         assert "Sprout Worktrees" in result.stdout
+        assert "feature1" in result.stdout
+        assert "feature2" in result.stdout
 
     def test_ls_no_worktrees(self, mocker):
         """Test listing when no worktrees exist."""
