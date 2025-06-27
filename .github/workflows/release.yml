@@ -1,0 +1,259 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      prerelease:
+        description: 'Mark as pre-release'
+        required: false
+        type: boolean
+        default: false
+      test_pypi:
+        description: 'Upload to Test PyPI first'
+        required: false
+        type: boolean
+        default: false
+      release_notes:
+        description: 'Additional release notes (optional)'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  id-token: write  # Required for trusted publishing
+
+jobs:
+  prepare-release:
+    name: Prepare Release
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      version_bump: ${{ steps.version.outputs.bump_type }}
+      changelog: ${{ steps.changelog.outputs.content }}
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Validate CHANGELOG has unreleased content
+        id: validate
+        run: |
+          if ! grep -q "## \[Unreleased\]" CHANGELOG.md; then
+            echo "❌ No [Unreleased] section found in CHANGELOG.md"
+            exit 1
+          fi
+          
+          # Check if there are any entries under Unreleased
+          unreleased_content=$(sed -n '/## \[Unreleased\]/,/## \[/p' CHANGELOG.md | grep -E "^- " || true)
+          if [ -z "$unreleased_content" ]; then
+            echo "❌ No changes documented in [Unreleased] section"
+            exit 1
+          fi
+          
+          echo "✅ Found unreleased changes in CHANGELOG.md"
+      
+      - name: Determine version bump type
+        id: version
+        run: |
+          # Extract current version from pyproject.toml
+          current_version=$(grep -E '^version = "' pyproject.toml | cut -d'"' -f2)
+          echo "Current version: $current_version"
+          
+          # Analyze changelog to determine bump type
+          major_changes=$(sed -n '/## \[Unreleased\]/,/## \[/p' CHANGELOG.md | grep -E "^### (Removed)" || true)
+          minor_changes=$(sed -n '/## \[Unreleased\]/,/## \[/p' CHANGELOG.md | grep -E "^### (Added|Changed|Deprecated)" || true)
+          patch_changes=$(sed -n '/## \[Unreleased\]/,/## \[/p' CHANGELOG.md | grep -E "^### (Fixed|Security)" || true)
+          
+          # Determine bump type (check in order: major -> minor -> patch)
+          if [ -n "$major_changes" ]; then
+            bump_type="major"
+          elif [ -n "$minor_changes" ]; then
+            bump_type="minor"
+          elif [ -n "$patch_changes" ]; then
+            bump_type="patch"
+          else
+            # Default to patch if only individual items without category
+            bump_type="patch"
+          fi
+          
+          # Calculate new version
+          IFS='.' read -ra VERSION_PARTS <<< "$current_version"
+          major="${VERSION_PARTS[0]}"
+          minor="${VERSION_PARTS[1]}"
+          patch="${VERSION_PARTS[2]}"
+          
+          case $bump_type in
+            major)
+              new_version="$((major + 1)).0.0"
+              ;;
+            minor)
+              new_version="$major.$((minor + 1)).0"
+              ;;
+            patch)
+              new_version="$major.$minor.$((patch + 1))"
+              ;;
+          esac
+          
+          echo "Bump type: $bump_type"
+          echo "New version: $new_version"
+          
+          echo "version=$new_version" >> $GITHUB_OUTPUT
+          echo "bump_type=$bump_type" >> $GITHUB_OUTPUT
+      
+      - name: Extract changelog content
+        id: changelog
+        run: |
+          # Extract content between [Unreleased] and the next section
+          changelog=$(sed -n '/## \[Unreleased\]/,/## \[/{//!p;}' CHANGELOG.md | sed '/^$/d')
+          
+          # Write to file to preserve formatting
+          echo "$changelog" > changelog_content.txt
+          
+          # Set multiline output
+          echo "content<<EOF" >> $GITHUB_OUTPUT
+          echo "$changelog" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+  
+  quality-checks:
+    name: Quality Checks
+    needs: prepare-release
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+      
+      - name: Install dependencies
+        run: |
+          uv venv
+          uv pip install -e ".[dev]"
+      
+      - name: Run tests
+        run: |
+          uv run pytest --cov=sprout --cov-report=term-missing
+      
+      - name: Run linting
+        run: |
+          uv run ruff check src tests
+          uv run ruff format --check src tests
+      
+      - name: Run type checking
+        run: |
+          uv run mypy src
+  
+  build-and-publish:
+    name: Build and Publish
+    needs: [prepare-release, quality-checks]
+    runs-on: ubuntu-latest
+    environment: 
+      name: release
+      url: https://pypi.org/project/sprout-cli/
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install build tools
+        run: |
+          pip install hatch twine
+      
+      - name: Update version in files
+        run: |
+          # Update pyproject.toml
+          sed -i 's/version = ".*"/version = "${{ needs.prepare-release.outputs.version }}"/' pyproject.toml
+          
+          # Update __init__.py
+          sed -i 's/__version__ = ".*"/__version__ = "${{ needs.prepare-release.outputs.version }}"/' src/sprout/__init__.py
+          
+          # Update CHANGELOG.md
+          today=$(date +%Y-%m-%d)
+          sed -i "s/## \[Unreleased\]/## [Unreleased]\n\n### Added\n\n### Changed\n\n### Deprecated\n\n### Removed\n\n### Fixed\n\n### Security\n\n## [${{ needs.prepare-release.outputs.version }}] - $today/" CHANGELOG.md
+          
+          # Update comparison link
+          echo "" >> CHANGELOG.md
+          echo "[${{ needs.prepare-release.outputs.version }}]: https://github.com/SecDev-Lab/sprout/compare/v${{ needs.prepare-release.outputs.version }}...HEAD" >> CHANGELOG.md
+          sed -i "s|\[Unreleased\]:.*|[Unreleased]: https://github.com/SecDev-Lab/sprout/compare/v${{ needs.prepare-release.outputs.version }}...HEAD|" CHANGELOG.md
+      
+      - name: Commit version updates
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add pyproject.toml src/sprout/__init__.py CHANGELOG.md
+          git commit -m "Release version ${{ needs.prepare-release.outputs.version }}"
+      
+      - name: Build package
+        run: |
+          hatch build
+          twine check dist/*
+      
+      - name: Upload to Test PyPI
+        if: github.event.inputs.test_pypi == 'true'
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.TEST_PYPI_API_TOKEN }}
+        run: |
+          twine upload --repository testpypi dist/*
+          echo "📦 Package uploaded to Test PyPI"
+          echo "Install with: pip install --index-url https://test.pypi.org/simple/ sprout-cli"
+      
+      - name: Upload to PyPI
+        if: github.event.inputs.test_pypi != 'true'
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          twine upload dist/*
+          echo "📦 Package uploaded to PyPI"
+          echo "Install with: pip install sprout-cli"
+      
+      - name: Create and push tag
+        run: |
+          git tag -a "v${{ needs.prepare-release.outputs.version }}" -m "Release v${{ needs.prepare-release.outputs.version }}"
+          git push origin main --tags
+      
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ needs.prepare-release.outputs.version }}
+          name: v${{ needs.prepare-release.outputs.version }}
+          body: |
+            ## What's Changed
+            
+            ${{ needs.prepare-release.outputs.changelog }}
+            
+            ${{ github.event.inputs.release_notes }}
+            
+            ---
+            
+            **Full Changelog**: https://github.com/SecDev-Lab/sprout/compare/v0.1.0...v${{ needs.prepare-release.outputs.version }}
+          draft: false
+          prerelease: ${{ github.event.inputs.prerelease == 'true' }}
+          files: |
+            dist/*
+      
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/

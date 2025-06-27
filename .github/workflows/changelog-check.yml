@@ -1,0 +1,111 @@
+name: Changelog Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  check-changelog:
+    name: Check CHANGELOG.md
+    runs-on: ubuntu-latest
+    # Skip for certain types of PRs
+    if: |
+      !contains(github.event.pull_request.labels.*.name, 'skip-changelog') &&
+      !startsWith(github.event.pull_request.title, 'docs:') &&
+      !startsWith(github.event.pull_request.title, 'ci:') &&
+      !startsWith(github.event.pull_request.title, 'chore:')
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Check if CHANGELOG.md was modified
+        id: changelog_modified
+        run: |
+          # Get the list of changed files
+          changed_files=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+          
+          if echo "$changed_files" | grep -q "^CHANGELOG.md$"; then
+            echo "modified=true" >> $GITHUB_OUTPUT
+            echo "✅ CHANGELOG.md has been modified"
+          else
+            echo "modified=false" >> $GITHUB_OUTPUT
+            echo "❌ CHANGELOG.md has not been modified"
+          fi
+      
+      - name: Validate CHANGELOG format
+        if: steps.changelog_modified.outputs.modified == 'true'
+        run: |
+          # Check for [Unreleased] section
+          if ! grep -q "## \[Unreleased\]" CHANGELOG.md; then
+            echo "❌ No [Unreleased] section found in CHANGELOG.md"
+            exit 1
+          fi
+          
+          # Check for valid Keep a Changelog sections
+          valid_sections="Added|Changed|Deprecated|Removed|Fixed|Security"
+          
+          # Extract content between [Unreleased] and next version section
+          unreleased_content=$(sed -n '/## \[Unreleased\]/,/## \[.*\] -/{//!p;}' CHANGELOG.md)
+          
+          # Check if any valid section exists
+          if ! echo "$unreleased_content" | grep -qE "^### ($valid_sections)"; then
+            echo "❌ No valid Keep a Changelog sections found under [Unreleased]"
+            echo "Please use one of: ### Added, ### Changed, ### Deprecated, ### Removed, ### Fixed, ### Security"
+            exit 1
+          fi
+          
+          # Check if there are actual entries (lines starting with -)
+          if ! echo "$unreleased_content" | grep -q "^- "; then
+            echo "❌ No change entries found. Please add entries starting with '- '"
+            exit 1
+          fi
+          
+          echo "✅ CHANGELOG.md format is valid"
+      
+      - name: Comment on PR
+        if: steps.changelog_modified.outputs.modified == 'false'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const comment = `## ⚠️ Missing CHANGELOG Update
+            
+            This PR appears to contain code changes but doesn't update the CHANGELOG.md file.
+            
+            Please update the \`[Unreleased]\` section in CHANGELOG.md with your changes using the [Keep a Changelog](https://keepachangelog.com/) format:
+            
+            - \`### Added\` - for new features
+            - \`### Changed\` - for changes in existing functionality  
+            - \`### Deprecated\` - for soon-to-be removed features
+            - \`### Removed\` - for now removed features
+            - \`### Fixed\` - for any bug fixes
+            - \`### Security\` - for vulnerability fixes
+            
+            Example:
+            \`\`\`markdown
+            ## [Unreleased]
+            
+            ### Added
+            - New feature X that does Y
+            
+            ### Fixed
+            - Bug in component Z
+            \`\`\`
+            
+            If this PR doesn't require a changelog entry (e.g., documentation, CI changes), you can:
+            1. Add the \`skip-changelog\` label to this PR
+            2. Use conventional commit prefixes: \`docs:\`, \`ci:\`, or \`chore:\``;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+      
+      - name: Fail if changelog not updated
+        if: steps.changelog_modified.outputs.modified == 'false'
+        run: |
+          echo "❌ CHANGELOG.md must be updated for this PR"
+          exit 1

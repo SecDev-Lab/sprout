@@ -47,6 +47,51 @@ Responses and documentation should be written in English. Always use English for
 When developing new features, place specifications under `docs/(feature-name)/*.md`.
 These specifications serve as references during implementation, but their main purpose is to look back on "what was the purpose, how, and what was implemented" after implementation.
 
+## Changelog Management
+
+**IMPORTANT**: All code changes MUST be documented in CHANGELOG.md following the Keep a Changelog format.
+
+### Rules for CHANGELOG Updates
+1. **Every PR with code changes** must update the `[Unreleased]` section in CHANGELOG.md
+2. **Use Keep a Changelog format** strictly:
+   - `### Added` - for new features (triggers MINOR version bump)
+   - `### Changed` - for changes in existing functionality (triggers MINOR version bump)
+   - `### Deprecated` - for soon-to-be removed features (triggers MINOR version bump)
+   - `### Removed` - for now removed features (triggers MAJOR version bump)
+   - `### Fixed` - for any bug fixes (triggers PATCH version bump)
+   - `### Security` - for vulnerability fixes (triggers PATCH version bump)
+
+3. **Exceptions** (no changelog required):
+   - Documentation-only changes (PRs starting with `docs:`)
+   - CI/CD changes (PRs starting with `ci:`)
+   - Chore/maintenance tasks (PRs starting with `chore:`)
+   - PRs with `skip-changelog` label
+
+### Changelog Entry Format
+```markdown
+## [Unreleased]
+
+### Added
+- New feature X that does Y
+- Support for Z functionality
+
+### Fixed
+- Bug in component A when condition B occurs
+```
+
+### Release Process
+- Releases are triggered manually from GitHub Actions UI
+- Version bumps are **automatic** based on changelog sections:
+  - Major: When `### Removed` section has entries
+  - Minor: When `### Added`, `### Changed`, or `### Deprecated` sections have entries
+  - Patch: When only `### Fixed` or `### Security` sections have entries
+- The release workflow will:
+  1. Validate changelog has unreleased entries
+  2. Determine version bump type automatically
+  3. Update version in all relevant files
+  4. Create git tag and GitHub release
+  5. Publish to PyPI
+
 ## Intermediate File Management
 
 ### Using tmp/ Directory
