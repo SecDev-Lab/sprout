@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 ### Changed
+- `sprout path` command now accepts index numbers in addition to branch names
 
 ### Deprecated
 

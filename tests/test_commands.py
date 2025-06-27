@@ -109,7 +109,8 @@ class TestLsCommand:
 
         # Mock prerequisites
         mocker.patch("sprout.commands.ls.is_git_repository", return_value=True)
-        mocker.patch("sprout.commands.ls.get_sprout_dir", return_value=sprout_dir)
+        mocker.patch("sprout.utils.is_git_repository", return_value=True)
+        mocker.patch("sprout.utils.get_sprout_dir", return_value=sprout_dir)
         mocker.patch("pathlib.Path.cwd", return_value=project_dir)
 
         # Mock git worktree list output
@@ -122,7 +123,7 @@ worktree {feature2_dir}
 HEAD def456
 branch refs/heads/feature2
 """
-        mocker.patch("sprout.commands.ls.run_command", return_value=mock_result)
+        mocker.patch("sprout.utils.run_command", return_value=mock_result)
 
         result = runner.invoke(app, ["ls"])
 
@@ -134,11 +135,12 @@ branch refs/heads/feature2
     def test_ls_no_worktrees(self, mocker):
         """Test listing when no worktrees exist."""
         mocker.patch("sprout.commands.ls.is_git_repository", return_value=True)
-        mocker.patch("sprout.commands.ls.get_sprout_dir", return_value=Path("/project/.sprout"))
+        mocker.patch("sprout.utils.is_git_repository", return_value=True)
+        mocker.patch("sprout.utils.get_sprout_dir", return_value=Path("/project/.sprout"))
 
         mock_result = Mock()
         mock_result.stdout = ""
-        mocker.patch("sprout.commands.ls.run_command", return_value=mock_result)
+        mocker.patch("sprout.utils.run_command", return_value=mock_result)
 
         result = runner.invoke(app, ["ls"])
 
@@ -165,6 +167,9 @@ class TestPathCommand:
     def test_path_success(self, mocker):
         """Test getting worktree path."""
         mocker.patch("sprout.commands.path.is_git_repository", return_value=True)
+        mocker.patch(
+            "sprout.commands.path.resolve_branch_identifier", return_value="feature-branch"
+        )
         mocker.patch("sprout.commands.path.worktree_exists", return_value=True)
         mocker.patch("sprout.commands.path.get_sprout_dir", return_value=Path("/project/.sprout"))
 
@@ -176,6 +181,9 @@ class TestPathCommand:
     def test_path_worktree_not_exists(self, mocker):
         """Test error when worktree doesn't exist."""
         mocker.patch("sprout.commands.path.is_git_repository", return_value=True)
+        mocker.patch(
+            "sprout.commands.path.resolve_branch_identifier", return_value="feature-branch"
+        )
         mocker.patch("sprout.commands.path.worktree_exists", return_value=False)
 
         result = runner.invoke(app, ["path", "feature-branch"])
@@ -183,6 +191,64 @@ class TestPathCommand:
         assert result.exit_code == 1
         # Error goes to stderr, not stdout in path command
         assert "Error: Worktree for branch 'feature-branch' does not exist" in result.output
+
+    def test_path_with_index(self, mocker, tmp_path):
+        """Test getting worktree path using index."""
+        # Set up test directory structure
+        project_dir = tmp_path / "project"
+        project_dir.mkdir()
+        sprout_dir = project_dir / ".sprout"
+        sprout_dir.mkdir()
+
+        # Create worktree directories
+        feature_a_dir = sprout_dir / "feature-a"
+        feature_a_dir.mkdir()
+        feature_b_dir = sprout_dir / "feature-b"
+        feature_b_dir.mkdir()
+
+        # Mock prerequisites
+        mocker.patch("sprout.commands.path.is_git_repository", return_value=True)
+        mocker.patch("sprout.utils.is_git_repository", return_value=True)
+        mocker.patch("sprout.utils.get_sprout_dir", return_value=sprout_dir)
+        mocker.patch("sprout.commands.path.get_sprout_dir", return_value=sprout_dir)
+        mocker.patch("sprout.commands.path.worktree_exists", return_value=True)
+        mocker.patch("pathlib.Path.cwd", return_value=project_dir)
+
+        # Mock git worktree list output for index resolution
+        mock_result = Mock()
+        mock_result.stdout = f"""worktree {feature_a_dir}
+HEAD abc123
+branch refs/heads/feature-a
+
+worktree {feature_b_dir}
+HEAD def456
+branch refs/heads/feature-b
+"""
+        mocker.patch("sprout.utils.run_command", return_value=mock_result)
+
+        # Test with index "2" which should resolve to "feature-b"
+        result = runner.invoke(app, ["path", "2"])
+
+        assert result.exit_code == 0
+        assert result.stdout.strip() == str(sprout_dir / "feature-b")
+
+    def test_path_with_invalid_index(self, mocker):
+        """Test error when using invalid index."""
+        # Mock prerequisites
+        mocker.patch("sprout.commands.path.is_git_repository", return_value=True)
+        mocker.patch("sprout.utils.is_git_repository", return_value=True)
+        mocker.patch("sprout.utils.get_sprout_dir", return_value=Path("/project/.sprout"))
+
+        # Mock empty worktree list
+        mock_result = Mock()
+        mock_result.stdout = ""
+        mocker.patch("sprout.utils.run_command", return_value=mock_result)
+
+        result = runner.invoke(app, ["path", "99"])
+
+        assert result.exit_code == 1
+        assert "Invalid index '99'" in result.output
+        assert "sprout ls" in result.output
 
 
 class TestVersion:
@@ -194,3 +260,124 @@ class TestVersion:
 
         assert result.exit_code == 0
         assert "sprout version" in result.stdout
+
+
+class TestIndexedOperations:
+    """Test index-based functionality."""
+
+    def test_ls_with_indices(self, mocker, tmp_path):
+        """Test that ls command shows index numbers."""
+        # Set up test directory structure
+        project_dir = tmp_path / "project"
+        project_dir.mkdir()
+        sprout_dir = project_dir / ".sprout"
+        sprout_dir.mkdir()
+
+        # Create worktree directories
+        feature_a_dir = sprout_dir / "feature-a"
+        feature_a_dir.mkdir()
+        feature_b_dir = sprout_dir / "feature-b"
+        feature_b_dir.mkdir()
+        feature_c_dir = sprout_dir / "feature-c"
+        feature_c_dir.mkdir()
+
+        # Mock prerequisites
+        mocker.patch("sprout.utils.is_git_repository", return_value=True)
+        mocker.patch("sprout.utils.get_sprout_dir", return_value=sprout_dir)
+        mocker.patch("pathlib.Path.cwd", return_value=project_dir)
+
+        # Mock git worktree list output
+        mock_result = Mock()
+        mock_result.stdout = f"""worktree {feature_a_dir}
+HEAD abc123
+branch refs/heads/feature-a
+
+worktree {feature_b_dir}
+HEAD def456
+branch refs/heads/feature-b
+
+worktree {feature_c_dir}
+HEAD ghi789
+branch refs/heads/feature-c
+"""
+        mocker.patch("sprout.utils.run_command", return_value=mock_result)
+
+        result = runner.invoke(app, ["ls"])
+
+        assert result.exit_code == 0
+        assert "No." in result.stdout  # Check for index column header
+        assert "1" in result.stdout
+        assert "2" in result.stdout
+        assert "3" in result.stdout
+        # Check that branches are sorted alphabetically
+        lines = result.stdout.split("\n")
+        for line in lines:
+            if "1" in line and "feature-a" in line:
+                assert True
+                break
+        else:
+            raise AssertionError("Index 1 should correspond to feature-a")
+
+    def test_rm_with_index(self, mocker, tmp_path):
+        """Test removing worktree by index."""
+        # Set up test directory structure
+        project_dir = tmp_path / "project"
+        project_dir.mkdir()
+        sprout_dir = project_dir / ".sprout"
+        sprout_dir.mkdir()
+
+        # Create worktree directories
+        feature_a_dir = sprout_dir / "feature-a"
+        feature_a_dir.mkdir()
+        feature_b_dir = sprout_dir / "feature-b"
+        feature_b_dir.mkdir()
+
+        # Mock prerequisites
+        mocker.patch("sprout.commands.rm.is_git_repository", return_value=True)
+        mocker.patch("sprout.utils.is_git_repository", return_value=True)
+        mocker.patch("sprout.utils.get_sprout_dir", return_value=sprout_dir)
+        mocker.patch("sprout.commands.rm.get_sprout_dir", return_value=sprout_dir)
+        mocker.patch("sprout.utils.worktree_exists", return_value=True)
+        mocker.patch("sprout.commands.rm.worktree_exists", return_value=True)
+        mocker.patch("pathlib.Path.cwd", return_value=project_dir)
+
+        # Mock git worktree list output for index resolution
+        mock_result = Mock()
+        mock_result.stdout = f"""worktree {feature_a_dir}
+HEAD abc123
+branch refs/heads/feature-a
+
+worktree {feature_b_dir}
+HEAD def456
+branch refs/heads/feature-b
+"""
+        mocker.patch("sprout.utils.run_command", return_value=mock_result)
+
+        # Mock the actual removal command
+        mock_rm_result = Mock()
+        mock_rm_result.returncode = 0
+        mocker.patch("sprout.commands.rm.run_command", return_value=mock_rm_result)
+
+        # Test with index "2" which should resolve to "feature-b"
+        result = runner.invoke(app, ["rm", "2"], input="n\n")  # Say no to confirmation
+
+        assert result.exit_code == 0
+        assert "feature-b" in result.stdout  # Should show the resolved branch name
+
+    def test_rm_with_invalid_index(self, mocker):
+        """Test error when using invalid index."""
+        # Mock prerequisites
+        mocker.patch("sprout.commands.rm.is_git_repository", return_value=True)
+        mocker.patch("sprout.utils.is_git_repository", return_value=True)
+        mocker.patch("sprout.utils.get_sprout_dir", return_value=Path("/project/.sprout"))
+
+        # Mock empty worktree list
+        mock_result = Mock()
+        mock_result.stdout = ""
+        mocker.patch("sprout.utils.run_command", return_value=mock_result)
+
+        result = runner.invoke(app, ["rm", "1"])
+
+        assert result.exit_code == 1
+        assert "Invalid index" in result.stdout
+        assert "sprout ls" in result.stdout  # Should suggest using ls command

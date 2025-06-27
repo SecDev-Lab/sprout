@@ -123,3 +123,9 @@ ignore_missing_imports = true
 module = "tests.*"
 disallow_untyped_defs = false
 disallow_incomplete_defs = false
+
+[dependency-groups]
+dev = [
+    "pytest-mock>=3.14.1",
+    "ruff>=0.12.1",
+]

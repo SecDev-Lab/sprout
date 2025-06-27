@@ -59,24 +59,24 @@ def ls() -> None:
 
 @app.command()
 def rm(
-    branch_name: BranchName = typer.Argument(
+    identifier: str = typer.Argument(
         ...,
-        help="Name of the branch to remove",
+        help="Branch name or index number to remove",
     ),
 ) -> None:
     """Remove a development environment."""
-    remove_worktree(branch_name)
+    remove_worktree(identifier)
 
 
 @app.command()
 def path(
-    branch_name: BranchName = typer.Argument(
+    identifier: str = typer.Argument(
         ...,
-        help="Name of the branch to get path for",
+        help="Branch name or index number to get path for",
     ),
 ) -> None:
     """Get the path of a development environment."""
-    get_worktree_path(branch_name)
+    get_worktree_path(identifier)
 
 
 if __name__ == "__main__":
