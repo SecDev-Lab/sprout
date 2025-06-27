@@ -36,8 +36,7 @@ def git_repo(tmp_path):
         check=True,
     )
 
-    # Ensure we're on a branch named 'main'
-    # First check current branch name
+    # Get the default branch name
     result = subprocess.run(
         ["git", "branch", "--show-current"],
         cwd=tmp_path,
@@ -45,15 +44,7 @@ def git_repo(tmp_path):
         text=True,
         check=True,
     )
-    current_branch = result.stdout.strip()
-
-    # If not on 'main', rename the branch
-    if current_branch != "main":
-        subprocess.run(
-            ["git", "branch", "-m", "main"],
-            cwd=tmp_path,
-            check=True,
-        )
+    default_branch = result.stdout.strip()
 
     # Create .env.example
     env_example = tmp_path / ".env.example"
@@ -66,7 +57,7 @@ def git_repo(tmp_path):
         "COMPOSE_VAR=${COMPOSE_VAR:-default}\n"
     )
 
-    return tmp_path
+    return tmp_path, default_branch
 
 
 class TestIntegrationWorkflow:
@@ -74,6 +65,7 @@ class TestIntegrationWorkflow:
 
     def test_create_list_remove_workflow(self, git_repo, monkeypatch):
         """Test creating, listing, and removing a worktree."""
+        git_repo, default_branch = git_repo
         monkeypatch.chdir(git_repo)
         monkeypatch.setenv("API_KEY", "test_api_key")
 
@@ -124,15 +116,6 @@ class TestIntegrationWorkflow:
 
         # Remove worktree (with --yes flag to skip prompts in test)
         result = runner.invoke(app, ["rm", "feature-branch"], input="y\nn\n")
-        # Debug output if test fails in CI
-        if result.exit_code != 0:
-            print(f"\n=== RM COMMAND FAILED ===")
-            print(f"Exit code: {result.exit_code}")
-            print(f"STDOUT:\n{result.stdout}")
-            print(f"Exception: {result.exception}")
-            if result.exception:
-                import traceback
-                traceback.print_exception(type(result.exception), result.exception, result.exception.__traceback__)
         assert result.exit_code == 0
         assert "✅ Worktree removed successfully" in result.stdout
 
@@ -141,6 +124,7 @@ class TestIntegrationWorkflow:
 
     def test_create_with_user_input(self, git_repo, monkeypatch):
         """Test creating worktree with user input for variables."""
+        git_repo, default_branch = git_repo
         monkeypatch.chdir(git_repo)
 
         # Simulate user input for API_KEY
@@ -159,6 +143,7 @@ class TestIntegrationWorkflow:
 
     def test_create_existing_branch(self, git_repo, monkeypatch):
         """Test creating worktree for existing branch."""
+        git_repo, default_branch = git_repo
         monkeypatch.chdir(git_repo)
         monkeypatch.setenv("API_KEY", "test_key")
 
@@ -169,7 +154,7 @@ class TestIntegrationWorkflow:
             check=True,
         )
         subprocess.run(
-            ["git", "checkout", "main"],
+            ["git", "checkout", default_branch],
             cwd=git_repo,
             check=True,
         )
@@ -183,6 +168,7 @@ class TestIntegrationWorkflow:
 
     def test_error_cases(self, git_repo, monkeypatch, tmp_path):
         """Test various error conditions."""
+        git_repo, default_branch = git_repo
         monkeypatch.chdir(git_repo)
         monkeypatch.setenv("API_KEY", "test_key")
 
