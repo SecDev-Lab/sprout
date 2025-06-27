@@ -1,36 +1,36 @@
-# sprout 使用方法
+# sprout Usage Guide
 
-## インストール
+## Installation
 
 ```bash
-# 開発版のインストール
+# Development installation
 pip install -e .
 
-# または通常のインストール
+# Or standard installation
 pip install .
 ```
 
-## 基本的な使い方
+## Basic Usage
 
-### 1. 新しい開発環境の作成
+### 1. Create New Development Environment
 
 ```bash
 sprout create feature-branch
 ```
 
-このコマンドは以下を実行します：
-1. `.sprout/feature-branch`にworktreeを作成
-2. `.env.example`をテンプレートとして`.env`を生成
-3. 必要な環境変数の入力を促す
-4. ポート番号を自動的に割り当てる
+This command performs:
+1. Creates worktree in `.sprout/feature-branch`
+2. Generates `.env` from `.env.example` template
+3. Prompts for required environment variables
+4. Automatically assigns port numbers
 
-### 2. 開発環境の一覧表示
+### 2. List Development Environments
 
 ```bash
 sprout ls
 ```
 
-出力例：
+Example output:
 ```
                     Sprout Worktrees                    
 ┏━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━━━━━━┓
@@ -42,103 +42,103 @@ sprout ls
 └───────────────┴─────────────────────────┴──────────┴─────────────────┘
 ```
 
-### 3. 開発環境の削除
+### 3. Remove Development Environment
 
 ```bash
 sprout rm feature-branch
 ```
 
-確認プロンプトが表示されます：
-- worktreeの削除確認
-- gitブランチの削除確認（オプション）
+Displays confirmation prompts:
+- Worktree removal confirmation
+- Git branch removal confirmation (optional)
 
-### 4. 開発環境のパス取得
+### 4. Get Development Environment Path
 
 ```bash
-# パスを表示
+# Display path
 sprout path feature-branch
 
-# 直接移動する場合
+# Navigate directly
 cd $(sprout path feature-branch)
 ```
 
-## .env.example テンプレートの書き方
+## Writing .env.example Templates
 
-### 基本的な環境変数
+### Basic Environment Variables
 ```env
 DATABASE_URL={{ DATABASE_URL }}
 API_KEY={{ API_KEY }}
 ```
 
-### 自動ポート割り当て
+### Automatic Port Assignment
 ```env
 WEB_PORT={{ auto_port() }}
 API_PORT={{ auto_port() }}
 DB_PORT={{ auto_port() }}
 ```
 
-### Docker Compose変数（そのまま保持）
+### Docker Compose Variables (Preserved As-Is)
 ```env
 COMPOSE_PROJECT_NAME=${COMPOSE_PROJECT_NAME:-myproject}
 ```
 
-### 固定値
+### Fixed Values
 ```env
 ENVIRONMENT=development
 DEBUG=true
 ```
 
-## 実践的な例
+## Practical Examples
 
-### 1. 複数の開発環境を並行運用
+### 1. Running Multiple Development Environments in Parallel
 
 ```bash
-# 認証機能の開発
+# Develop authentication feature
 sprout create feature-auth
 cd .sprout/feature-auth
 docker compose up -d
 
-# UI改善の開発（別ターミナル）
+# Develop UI improvements (in another terminal)
 sprout create feature-ui  
 cd .sprout/feature-ui
 docker compose up -d
 
-# ポートは自動的に異なる番号が割り当てられる
+# Ports are automatically assigned different numbers
 ```
 
-### 2. 環境変数の事前設定
+### 2. Pre-setting Environment Variables
 
 ```bash
-# シェルで環境変数を設定
+# Set environment variables in shell
 export API_KEY="my-secret-key"
 export DATABASE_URL="postgres://localhost/mydb"
 
-# sproutは自動的にこれらの値を使用
+# sprout automatically uses these values
 sprout create feature-branch
 ```
 
-### 3. ブランチの切り替え
+### 3. Switching Between Branches
 
 ```bash
-# 現在の環境を確認
+# Check current environment
 sprout ls
 
-# 別の環境に移動
+# Navigate to another environment
 cd $(sprout path another-branch)
 ```
 
-## トラブルシューティング
+## Troubleshooting
 
-### "Not in a git repository" エラー
-- Gitリポジトリのルートディレクトリで実行してください
+### "Not in a git repository" Error
+- Execute from Git repository root directory
 
-### ".env.example file not found" エラー
-- プロジェクトルートに`.env.example`を作成してください
+### ".env.example file not found" Error
+- Create `.env.example` in project root
 
-### "Could not find an available port" エラー
-- 多くのポートが使用中の場合に発生
-- 不要なサービスを停止してください
+### "Could not find an available port" Error
+- Occurs when many ports are in use
+- Stop unnecessary services
 
-### worktreeが削除できない
-- 該当ディレクトリでプロセスが実行中の可能性
-- ディレクトリを移動してから再試行してください
+### Cannot Delete Worktree
+- Process might be running in that directory
+- Move out of directory and retry

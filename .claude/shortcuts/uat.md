@@ -1,41 +1,41 @@
-# UAT (User Acceptance Test) ショートカット
+# UAT (User Acceptance Test) Shortcut
 
-## 概要
-Pythonプロジェクトの包括的な動作確認を自動化するコマンド。
-コード品質、テスト、アプリケーション動作の確認を実施する。
+## Overview
+Command to automate comprehensive verification of Python projects.
+Performs code quality checks, tests, and application functionality verification.
 
-## 実行内容
+## Execution Content
 
-### 1. コード品質チェック
+### 1. Code Quality Check
 ```bash
 make format
 make lint
 ```
 
-### 2. 単体テスト実行
+### 2. Unit Test Execution
 ```bash
 make test
 ```
 
-### 3. アプリケーション動作確認
-プロジェクトのメインアプリケーション（CLIツール、Webサーバーなど）が存在する場合：
-- ヘルプメッセージの表示確認
-- 基本的な起動確認
-- ヘルスチェック（該当する場合）
+### 3. Application Functionality Verification
+If the project has a main application (CLI tool, web server, etc.):
+- Help message display verification
+- Basic startup verification
+- Health check (if applicable)
 
-## 合格基準
-- 全てのコマンドがエラーなく実行完了すること
-- Lintエラーが0件であること
-- 単体テストが全て通過すること
-- アプリケーションが正常に起動すること（該当する場合）
+## Pass Criteria
+- All commands execute without errors
+- Zero lint errors
+- All unit tests pass
+- Application starts normally (if applicable)
 
-## 実行例
+## Example Usage
 ```bash
-# Claude Codeでの実行
+# Execute in Claude Code
 +uat
 ```
 
-## 注意事項
-- 実際のデプロイや本番環境への影響はない
-- テストは開発環境で実行される
-- 必要に応じてプロジェクト固有の確認項目を追加可能
+## Notes
+- No impact on actual deployment or production environment
+- Tests run in development environment
+- Project-specific verification items can be added as needed

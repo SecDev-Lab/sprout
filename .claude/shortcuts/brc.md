@@ -1,117 +1,117 @@
 # +brc - Branch Review & Cleanup
 
-現在のブランチと main ブランチの差分を確認し、ブランチのクリーンアップを行います。
+Reviews differences between current branch and main branch, and performs branch cleanup.
 
-## 概要
+## Overview
 
-このコマンドは、PR作成前の品質チェックとクリーンアップを包括的に実行します。特に以下に注力します：
+This command comprehensively executes quality checks and cleanup before PR creation. It focuses on:
 
-- コード品質の確保（lint、format）
-- 不要なファイルやコードの削除
-- **tmp/ ディレクトリの完全なクリーンアップ**
-- TODOの精査と解決
-- テストの成功確認
+- Ensuring code quality (lint, format)
+- Removing unnecessary files and code
+- **Complete cleanup of tmp/ directory**
+- TODO review and resolution
+- Test success confirmation
 
-## 実行手順
+## Execution Steps
 
-### 1. 差分確認
+### 1. Diff Confirmation
 ```bash
 git diff main...HEAD
 git diff --name-only main...HEAD
 ```
-現在のブランチで変更されたファイルとその内容を確認します。
+Confirms files changed in current branch and their contents.
 
-### 2. 不要ファイル・コード断片の削除
-- デバッグ用の print 文、console.log、一時的なコメントアウトを削除
-- テスト用の一時ファイル（test_*.py, *.log, *.tmp など）で、実際のテストに使われていないものを削除
-- 不要な import 文を削除
-- 実装中にのみ使用した実験的なコードを削除
-- **tmp/ ディレクトリのクリーンアップ**：
+### 2. Remove Unnecessary Files and Code Fragments
+- Remove debug print statements, console.log, temporary comment-outs
+- Remove temporary test files (test_*.py, *.log, *.tmp etc.) not used in actual tests
+- Remove unused import statements
+- Remove experimental code used only during implementation
+- **tmp/ directory cleanup**:
   ```bash
-  # tmp/ ディレクトリの内容を確認
+  # Check tmp/ directory contents
   if [ -d "tmp/" ]; then
-    echo "=== tmp/ ディレクトリの内容 ==="
+    echo "=== tmp/ directory contents ==="
     ls -la tmp/
-    echo "これらのファイルを削除しますか？ (y/N)"
-    # ユーザーの確認を待つ
+    echo "Delete these files? (y/N)"
+    # Wait for user confirmation
     read -r response
     if [[ "$response" =~ ^[Yy]$ ]]; then
       rm -rf tmp/*
-      echo "tmp/ ディレクトリをクリーンアップしました"
+      echo "Cleaned up tmp/ directory"
     fi
   else
-    echo "tmp/ ディレクトリは存在しません"
+    echo "tmp/ directory does not exist"
   fi
   ```
 
-### 3. TODO精査と解決
+### 3. TODO Review and Resolution
 ```bash
-# TODO コメントを検索
+# Search for TODO comments
 rg "TODO|FIXME|XXX|HACK" --type-add 'code:*.{py,ts,js,tsx,jsx}' -t code
 ```
-- 見つかった TODO を一つずつ確認
-- 現在のブランチで解決すべきものは即座に解決
-- 将来のタスクとして残すべきものは、理由を明確にしてサマリーに記載
+- Check each TODO found
+- Immediately resolve items that should be resolved in current branch
+- For items to keep as future tasks, clearly state reason in summary
 
-### 4. フォーマット修正
+### 4. Format Fixes
 ```bash
 make format
 make lint
 ```
-- lint エラーがある場合は、エラーメッセージを確認して修正
-- 自動修正できないエラーは手動で修正
+- If lint errors exist, check error messages and fix
+- Manually fix errors that cannot be auto-fixed
 
-### 5. テスト修正
+### 5. Test Fixes
 ```bash
 make test
 ```
-- テストが失敗した場合：
-  - まずエラーメッセージを分析
-  - テストの期待値が正しいか確認
-  - 実装を修正すべきか、テストを修正すべきか判断
-  - テストより実装を優先すべき場合は、その理由をサマリーに記載
+- If tests fail:
+  - First analyze error messages
+  - Confirm if test expectations are correct
+  - Determine whether to fix implementation or tests
+  - If prioritizing implementation over tests, state reason in summary
 
-### 6. 最終確認とサマリー表示
-以下の形式でサマリーを表示：
+### 6. Final Confirmation and Summary Display
+Display summary in the following format:
 
 ```
-## ブランチレビューサマリー
+## Branch Review Summary
 
-### 変更内容
-- 変更ファイル数: X files
-- 追加行数: +XXX
-- 削除行数: -XXX
+### Changes
+- Changed files: X files
+- Added lines: +XXX
+- Deleted lines: -XXX
 
-### クリーンアップ実施内容
-- [ ] 不要なデバッグコード削除
-- [ ] 未使用 import 削除
-- [ ] 一時ファイル削除
-- [ ] tmp/ ディレクトリクリーンアップ
+### Cleanup Performed
+- [ ] Removed unnecessary debug code
+- [ ] Removed unused imports
+- [ ] Removed temporary files
+- [ ] Cleaned up tmp/ directory
 
-### TODO状況
-- 解決済み: X件
-- 残存: X件
-  - [理由] TODO内容
+### TODO Status
+- Resolved: X items
+- Remaining: X items
+  - [Reason] TODO content
 
-### テスト・品質チェック
+### Test & Quality Check
 - [ ] make format: PASS/FAIL
 - [ ] make lint: PASS/FAIL  
 - [ ] make test: PASS/FAIL
 
-### 残課題
-（もしあれば記載）
+### Remaining Issues
+(List if any)
 
-### 次のステップ
-（全てのチェックが PASS の場合）
-PR作成の準備が整いました。以下のコマンドで PR を作成してください：
-gh pr create --title "タイトル" --body "説明"
+### Next Steps
+(If all checks PASS)
+Ready to create PR. Use the following command to create a PR:
+gh pr create --title "Title" --body "Description"
 ```
 
-## 注意事項
-- 実装の意図を損なわないよう、慎重に不要コードを判断すること
-- テストが失敗した場合、安易にテストを修正せず、実装の正しさを優先的に検証すること
-- PR 作成は自動では行わず、ユーザーの最終確認を促すこと
-- **tmp/ ディレクトリについて**：
-  - Claude Codeが作成した全ての中間ファイル（テストファイル、計画ドキュメント等）は tmp/ に配置される
-  - +brc 実行時に必ずクリーンアップを実施する
-  - 削除前にユーザーの確認を求める
+## Notes
+- Carefully judge unnecessary code to not damage implementation intent
+- When tests fail, don't hastily fix tests, prioritize verifying implementation correctness
+- Don't automatically create PR, prompt for user's final confirmation
+- **About tmp/ directory**:
+  - All intermediate files created by Claude Code (test files, planning documents, etc.) are placed in tmp/
+  - Always perform cleanup when executing +brc
+  - Request user confirmation before deletion

@@ -2,111 +2,111 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## 作業姿勢・品質管理
+## Work Attitude and Quality Management
 
-**重要**: Claude Codeは慎重なベテランエンジニアとして振る舞うこと。実装の速さよりも品質と信頼性を重視する。
+**IMPORTANT**: Claude Code should act as a careful veteran engineer. Prioritize quality and reliability over implementation speed.
 
-### 基本姿勢
-- 実装完了と思った時こそ、批判的に検証を行う
-- 「動けばOK」ではなく「本当に正しく動作するか」を常に問う
-- 潜在的な問題やエッジケースを積極的に考慮する
-- テストや動作確認を面倒がらず、必要以上に丁寧に実施する
-- 自分の実装に対して常に懐疑的であり、複数の観点から検証する
+### Basic Attitude
+- Critically verify when you think implementation is complete
+- Not just "it works" but always ask "does it really work correctly?"
+- Actively consider potential problems and edge cases
+- Don't be lazy about testing and verification, be more thorough than necessary
+- Always be skeptical of your own implementation and verify from multiple perspectives
 
-### 実装前の確認事項
-- 既存コードの詳細な調査（関連ファイル、依存関係、影響範囲）
-- 設計パターンやコーディング規約の理解
-- テストケースの網羅性検討
-- エラーハンドリングの妥当性検証
+### Pre-Implementation Checklist
+- Detailed investigation of existing code (related files, dependencies, impact scope)
+- Understanding design patterns and coding conventions
+- Consider test case coverage
+- Verify error handling adequacy
 
-### 実装後の必須検証
-1. **コード品質**: `make lint`, `make format` による静的解析
-2. **単体テスト**: `make test` で全パッケージのテスト実行
-3. **統合テスト**: 包括的動作確認
-4. **手動検証**: 実際のユースケースでの動作確認
-5. **エラーケース**: 異常系での挙動確認
-6. **パフォーマンス**: 想定外の負荷でのテスト
-7. **互換性**: 既存機能への影響確認
+### Post-Implementation Required Verification
+1. **Code Quality**: Static analysis with `make lint`, `make format`
+2. **Unit Tests**: Run all package tests with `make test`
+3. **Integration Tests**: Comprehensive functionality verification
+4. **Manual Verification**: Confirm operation with actual use cases
+5. **Error Cases**: Verify behavior in abnormal conditions
+6. **Performance**: Test under unexpected load
+7. **Compatibility**: Confirm no impact on existing features
 
-### 品質基準
-- テストが全て通ることは最低条件
-- 静的解析エラー0であることは前提
-- 実際の使用シナリオで動作することを確認済み
-- エッジケースや異常系での挙動が適切
-- ドキュメントが更新済み（必要に応じて）
+### Quality Standards
+- All tests passing is minimum requirement
+- Zero static analysis errors is a prerequisite
+- Confirmed to work in actual usage scenarios
+- Appropriate behavior for edge cases and error conditions
+- Documentation updated (as needed)
 
-## 言語設定
+## Language Settings
 
-応答とドキュメントファイル生成は基本的に日本語で実施すること。ただし、以下の場合は英語を使用：
-- コード内のコメント、変数名、関数名
-- 既存の英語ドキュメントへの追記・修正
-- ユーザーが英語で質問した場合
+Responses and documentation should be written in English. Always use English for:
+- Comments, variable names, and function names in code
+- All documentation files
+- All communication
 
-## 仕様書の管理
+## Specification Management
 
-新機能開発の際は、 `docs/(新機能を表す英語短文)/*.md` 以下に、日本語で仕様書を配置すること。
-この仕様書は実装中の参考にもなるが、むしろ実装後に「あの機能は何を目的として・どのように・何を実装したのか」を振り返るのに使うのが目的。
+When developing new features, place specifications under `docs/(feature-name)/*.md`.
+These specifications serve as references during implementation, but their main purpose is to look back on "what was the purpose, how, and what was implemented" after implementation.
 
-## 中間ファイルの管理
+## Intermediate File Management
 
-### tmp/ ディレクトリの使用
-Claude Codeが作成する全ての中間ファイル（テストファイル、計画ドキュメント、一時的な作業ファイル等）は、必ず `tmp/` ディレクトリ以下に作成すること。
+### Using tmp/ Directory
+All intermediate files created by Claude Code (test files, planning documents, temporary work files, etc.) must be created under the `tmp/` directory.
 
-**対象となるファイル**:
-- テスト用のサンプルファイル
-- 実装計画のドキュメント
-- デバッグ用の一時ファイル
-- 検証用のスクリプト
-- その他の一時的な作業ファイル
+**Target Files**:
+- Sample files for testing
+- Implementation planning documents
+- Temporary debugging files
+- Verification scripts
+- Other temporary work files
 
-**例外**:
-- 正式なプロジェクトファイル（ソースコード、設定ファイル、正式なドキュメント等）
-- ユーザーが明示的に別の場所を指定した場合
+**Exceptions**:
+- Official project files (source code, configuration files, official documentation, etc.)
+- When user explicitly specifies a different location
 
-### クリーンアップ
-`tmp/` ディレクトリは定期的にクリーンアップされる：
-- ブランチレビュー時
-- 品質管理タスク実行時
+### Cleanup
+The `tmp/` directory is cleaned up periodically:
+- During branch review
+- During quality management task execution
 
-## Python開発の一般的なワークフロー
+## Python Development Workflow
 
-### セットアップ
+### Setup
 ```bash
-# 依存関係のインストール
-make setup  # または uv sync --dev
+# Install dependencies
+make setup  # or uv sync --dev
 ```
 
-### テストと品質管理
+### Testing and Quality Management
 ```bash
-# コード品質チェック
-make lint    # ruffによるlint
-make format  # ruffによるフォーマット
+# Code quality check
+make lint    # lint with ruff
+make format  # format with ruff
 
-# テスト実行
-make test         # 全テスト実行
-make test-cov     # カバレッジ付きテスト実行
+# Run tests
+make test         # run all tests
+make test-cov     # run tests with coverage
 ```
 
-### 開発時の考慮事項
-- 単体テストでは外部依存をモック化
-- `.env`ファイルによる環境設定
-- `@pytest.mark.parametrize`で複数シナリオのテスト
-- 非同期処理では`asyncio`を活用
+### Development Considerations
+- Mock external dependencies in unit tests
+- Use `.env` files for environment configuration
+- Use `@pytest.mark.parametrize` for multiple test scenarios
+- Utilize `asyncio` for asynchronous processing
 
-## ショートカットコマンド
+## Shortcut Commands
 
-このプロジェクトでは、`.claude/shortcuts/` ディレクトリに定義されたショートカットコマンドが利用可能です。
+This project supports shortcut commands defined in the `.claude/shortcuts/` directory.
 
-### 使用ルール
-- `+***` 形式の命令を受けた場合、`.claude/shortcuts/***.md` ファイルを参照すること
-- 該当するショートカットファイルが存在しない場合は、エラーメッセージを表示すること
-- ショートカットファイルに記載された内容に従って処理を実行すること
+### Usage Rules
+- When receiving commands in `+***` format, refer to `.claude/shortcuts/***.md` file
+- Display error message if the corresponding shortcut file doesn't exist
+- Execute processing according to the contents of the shortcut file
 
-### 利用可能なショートカット
-- `+tn`: ターミナル通知（音で通知）
-- `+brc`: ブランチレビュー＆クリーンアップ
-- `+uat`: User Acceptance Testing（コード品質チェック、単体テスト、アプリケーション動作確認の包括的実行）
-- `+review`: GitHub PRレビュー
+### Available Shortcuts
+- `+tn`: Terminal notification (sound notification)
+- `+brc`: Branch review & cleanup
+- `+uat`: User Acceptance Testing (comprehensive execution of code quality check, unit tests, and application functionality verification)
+- `+review`: GitHub PR review
 
 ## Task Completion Notification
 

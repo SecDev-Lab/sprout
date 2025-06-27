@@ -1,23 +1,23 @@
 # Terminal Notification (+tn)
 
-このコマンドは、現在のOS環境に応じて音を鳴らすためのショートカットです。
+This command is a shortcut to play a sound notification based on the current OS environment.
 
-## 使用方法
+## Usage
 ```
 +tn
 ```
 
-## 動作
-OS判定を行い、適切なコマンドを実行します：
+## Behavior
+Detects the OS and executes the appropriate command:
 
-### OS判定方法
-`uname -s` コマンドでOS種別を取得し、結果に応じて分岐：
-- `Linux` の場合: Linux環境
-- `Darwin` の場合: macOS環境
+### OS Detection Method
+Uses `uname -s` command to determine OS type:
+- `Linux`: Linux environment
+- `Darwin`: macOS environment
 
-### 実行コマンド
+### Executed Commands
 - **Linux**: `paplay /usr/share/sounds/freedesktop/stereo/complete.oga`
 - **macOS**: `terminal-notifier -sound Bottle -message 'Claude Code task finished'`
 
-## 用途
-Claude Codeがタスクを完了した時に音で通知するために使用します。
+## Purpose
+Used to notify with sound when Claude Code completes a task.

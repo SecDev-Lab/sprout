@@ -19,7 +19,7 @@ pip install sprout
 For development:
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/sprout.git
+git clone https://github.com/SecDev-Lab/sprout.git
 cd sprout
 
 # Install in development mode

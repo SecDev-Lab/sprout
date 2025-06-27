@@ -1,123 +1,123 @@
 # GitHub Pull Request Review (+review)
 
-GitHubのプライベートリポジトリのPull Requestを詳細にレビューするショートカットです。
+Shortcut to perform detailed review of Pull Requests in GitHub private repositories.
 
-## 概要
+## Overview
 
-このコマンドは、指定されたPRの包括的なコードレビューを実行し、品質評価とアクションアイテムを提供します。レビュー処理中に作成される中間ファイルは `tmp/` ディレクトリに配置され、処理完了後に自動的にクリーンアップされます。
+This command executes comprehensive code review of specified PR and provides quality assessment and action items. Intermediate files created during review processing are placed in `tmp/` directory and automatically cleaned up after processing completion.
 
-## 使用方法
+## Usage
 
 ```
 +review <PR_URL>
 ```
 
-例：
+Example:
 ```
 +review https://github.com/owner/repo/pull/123
 ```
 
-## 機能
+## Features
 
-このショートカットは以下のタスクを実行します：
+This shortcut performs the following tasks:
 
-1. **PRの基本情報取得**
-   - `gh pr view`でPR詳細情報を取得
-   - タイトル、説明、レビュアー、ステータス等
+1. **Get PR Basic Information**
+   - Get PR details with `gh pr view`
+   - Title, description, reviewers, status, etc.
 
-2. **コード変更の詳細分析**
-   - `gh pr diff`で変更内容を取得
-   - 各ファイルの変更行数と内容を分析
+2. **Detailed Analysis of Code Changes**
+   - Get changes with `gh pr diff`
+   - Analyze change lines and content for each file
 
-3. **品質レビュー**
-   - コーディングスタイル、設計パターンの確認
-   - セキュリティ、パフォーマンスの観点からの分析
-   - 潜在的な問題点の指摘
+3. **Quality Review**
+   - Check coding style and design patterns
+   - Analyze from security and performance perspectives
+   - Point out potential issues
 
-4. **総合評価とアクションアイテム**
-   - マージ可否の判断
-   - 具体的な改善提案
+4. **Overall Assessment and Action Items**
+   - Judge whether mergeable
+   - Specific improvement suggestions
 
-5. **中間ファイルのクリーンアップ**
-   - レビュー処理中に `tmp/` ディレクトリに作成された中間ファイルを自動削除
-   - 作業環境のクリーンアップ
+5. **Intermediate File Cleanup**
+   - Automatically delete intermediate files created in `tmp/` directory during review processing
+   - Clean up work environment
 
-## 前提条件
+## Prerequisites
 
-- GitHub CLIがインストール済み（`gh`コマンド利用可能）
-- `gh auth login`で認証済み
-- レビュー対象リポジトリへの読み取り権限
+- GitHub CLI installed (`gh` command available)
+- Authenticated with `gh auth login`
+- Read permission for target repository
 
-## 実行プロセス
+## Execution Process
 
-ショートカット実行時、Claude Codeは以下を順次実行します：
+When executing shortcut, Claude Code sequentially performs:
 
-1. PR URLからowner/repo/pr-numberを抽出
-2. `gh pr view` でPR基本情報取得
-3. `gh pr diff` で変更差分取得  
-4. 取得したデータを基に詳細レビュー実施
-5. 構造化されたレビュー結果を出力
-6. **tmp/ ディレクトリのクリーンアップ**
+1. Extract owner/repo/pr-number from PR URL
+2. Get PR basic info with `gh pr view`
+3. Get change diff with `gh pr diff`
+4. Perform detailed review based on obtained data
+5. Output structured review results
+6. **Cleanup tmp/ directory**
    ```bash
-   # レビュー中に作成された中間ファイルを確認・削除
+   # Check and delete intermediate files created during review
    if [ -d "tmp/" ] && [ "$(ls -A tmp/)" ]; then
-     echo "=== レビュー処理で作成された中間ファイル ==="
+     echo "=== Intermediate files created during review processing ==="
      ls -la tmp/
      rm -rf tmp/*
-     echo "tmp/ ディレクトリをクリーンアップしました"
+     echo "Cleaned up tmp/ directory"
    fi
    ```
 
-## 出力形式
+## Output Format
 
 ```markdown
 # PR Review: [PR Title]
 
-## 基本情報
+## Basic Information
 - Repository: owner/repo
-- PR番号: #XXX
-- 作成者: [author]
-- ステータス: [open/closed/merged]
-- 変更ファイル数: XX files
-- 変更行数: +XXX -XXX
+- PR Number: #XXX
+- Author: [author]
+- Status: [open/closed/merged]
+- Changed Files: XX files
+- Changes: +XXX -XXX
 
-## 変更概要
-[PRの目的と主要な変更内容]
+## Change Summary
+[PR purpose and main changes]
 
-## ファイル別変更詳細
+## File-by-File Change Details
 ### [filename]
-- 変更タイプ: [新規/修正/削除]
-- 主な変更点:
-  - [具体的な変更内容]
+- Change Type: [new/modified/deleted]
+- Main Changes:
+  - [Specific changes]
 
-## コード品質評価
-### ✅ 良い点
-- [具体的な評価ポイント]
+## Code Quality Assessment
+### ✅ Good Points
+- [Specific evaluation points]
 
-### ⚠️ 改善検討点  
-- [具体的な改善提案]
+### ⚠️ Points for Improvement  
+- [Specific improvement suggestions]
 
-### 🚨 潜在的問題
-- [セキュリティ/パフォーマンス/バグリスク]
+### 🚨 Potential Issues
+- [Security/Performance/Bug risks]
 
-## 総合評価
-**マージ判定**: [✅ APPROVE / ⚠️ REQUEST_CHANGES / 💬 COMMENT]
+## Overall Assessment
+**Merge Decision**: [✅ APPROVE / ⚠️ REQUEST_CHANGES / 💬 COMMENT]
 
-**理由**: [判定理由の詳細]
+**Reason**: [Detailed reason for decision]
 
-## 推奨アクション
-- [ ] [具体的な修正提案]
-- [ ] [テスト追加提案]  
-- [ ] [ドキュメント更新提案]
+## Recommended Actions
+- [ ] [Specific fix suggestions]
+- [ ] [Test addition suggestions]  
+- [ ] [Documentation update suggestions]
 ```
 
-## 注意事項
+## Notes
 
-- レビュー結果はClaude Code上にのみ表示されます
-- GitHub上への自動コメント投稿は行いません
-- 大きなPRの場合、分析に時間がかかる場合があります
-- プライベートリポジトリには適切な権限が必要です
-- **tmp/ ディレクトリについて**：
-  - レビュー処理中の中間ファイル（分析データ、一時レポート等）は tmp/ に配置される
-  - レビュー完了後、中間ファイルは自動的に削除される
-  - 削除前に内容を確認し、ログ出力で削除内容を報告する
+- Review results are only displayed on Claude Code
+- No automatic comment posting to GitHub
+- Analysis may take time for large PRs
+- Appropriate permissions required for private repositories
+- **About tmp/ directory**:
+  - Intermediate files during review processing (analysis data, temporary reports, etc.) are placed in tmp/
+  - After review completion, intermediate files are automatically deleted
+  - Check contents before deletion and report deletion in log output

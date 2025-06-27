@@ -1,74 +1,74 @@
-# sprout CLIツール概要
+# sprout CLI Tool Overview
 
-## 目的
+## Purpose
 
-`sprout`は、`git worktree`と`docker compose`を併用する開発ワークフローにおいて、ブランチごとの独立した開発環境のセットアップを自動化・簡略化するCLIツールです。
+`sprout` is a CLI tool that automates and simplifies the setup of independent development environments for each branch in development workflows using `git worktree` and `docker compose`.
 
-## 主な機能
+## Main Features
 
-### 1. 開発環境の自動セットアップ
-- git worktreeの作成
-- `.env.example`をテンプレートとした`.env`ファイルの自動生成
-- ポート番号の自動割り当て（衝突回避）
-- 環境変数の対話的設定
+### 1. Automated Development Environment Setup
+- Create git worktrees
+- Automatically generate `.env` files from `.env.example` templates
+- Automatic port number assignment (collision avoidance)
+- Interactive environment variable configuration
 
-### 2. 統一的な管理
-- すべてのworktreeを`.sprout/`ディレクトリに集約
-- 一覧表示、削除、パス取得などの管理機能
-- 現在のworktreeの視覚的表示
+### 2. Unified Management
+- Centralize all worktrees in `.sprout/` directory
+- Management features like list display, deletion, and path retrieval
+- Visual display of current worktree
 
-## 設計思想
+## Design Philosophy
 
-### シンプルさの追求
-- 必要最小限の機能に絞り込み
-- 直感的なコマンド体系
-- 設定ファイル不要
+### Pursuit of Simplicity
+- Focus on minimum necessary features
+- Intuitive command structure
+- No configuration files required
 
-### 安全性の確保
-- 削除操作時の確認プロンプト
-- エラー時の適切なロールバック
-- ポート衝突の自動回避
+### Ensuring Safety
+- Confirmation prompts for delete operations
+- Proper rollback on errors
+- Automatic port collision avoidance
 
-### 開発効率の向上
-- 単一コマンドでの環境構築
-- 環境変数の再利用（シェル環境変数から自動取得）
-- Docker Compose変数構文との互換性維持
+### Improving Development Efficiency
+- Environment setup with single command
+- Reuse of environment variables (automatic retrieval from shell environment variables)
+- Maintain compatibility with Docker Compose variable syntax
 
-## アーキテクチャ
+## Architecture
 
-### ディレクトリ構造
+### Directory Structure
 ```
 /your-project
 ├── .git/
-├── .sprout/              # sprout管理ディレクトリ
-│   └── <branch-name>/    # 各worktree
-│       ├── .env          # 自動生成された環境設定
-│       └── ...           # ソースコード
-├── .env.example          # テンプレート
-└── compose.yaml          # Docker Compose設定
+├── .sprout/              # sprout management directory
+│   └── <branch-name>/    # each worktree
+│       ├── .env          # auto-generated environment config
+│       └── ...           # source code
+├── .env.example          # template
+└── compose.yaml          # Docker Compose config
 ```
 
-### テンプレート構文
-- `{{ VARIABLE }}`: ユーザー入力または環境変数
-- `{{ auto_port() }}`: 自動ポート割り当て
-- `${...}`: Docker Compose変数（そのまま保持）
+### Template Syntax
+- `{{ VARIABLE }}`: User input or environment variable
+- `{{ auto_port() }}`: Automatic port assignment
+- `${...}`: Docker Compose variables (preserved as-is)
 
-## 実装詳細
+## Implementation Details
 
-### 使用技術
-- **言語**: Python 3.11+
-- **CLIフレームワーク**: Typer
-- **UI**: Rich（カラフルな出力）
-- **パッケージ管理**: Hatch, uv
+### Technologies Used
+- **Language**: Python 3.11+
+- **CLI Framework**: Typer
+- **UI**: Rich (colorful output)
+- **Package Management**: Hatch, uv
 
-### エラーハンドリング
-- Gitリポジトリチェック
-- ファイル存在確認
-- ポート利用可能性検証
-- ユーザーキャンセル対応
+### Error Handling
+- Git repository check
+- File existence verification
+- Port availability validation
+- User cancellation support
 
-### テスト戦略
-- 単体テスト（pytest）
-- 統合テスト
-- モックを活用した外部コマンドテスト
-- カバレッジ目標: 80%以上
+### Test Strategy
+- Unit tests (pytest)
+- Integration tests
+- External command testing with mocks
+- Coverage target: 80% or higher
