@@ -124,6 +124,15 @@ class TestIntegrationWorkflow:
 
         # Remove worktree (with --yes flag to skip prompts in test)
         result = runner.invoke(app, ["rm", "feature-branch"], input="y\nn\n")
+        # Debug output if test fails in CI
+        if result.exit_code != 0:
+            print(f"\n=== RM COMMAND FAILED ===")
+            print(f"Exit code: {result.exit_code}")
+            print(f"STDOUT:\n{result.stdout}")
+            print(f"Exception: {result.exception}")
+            if result.exception:
+                import traceback
+                traceback.print_exception(type(result.exception), result.exception, result.exception.__traceback__)
         assert result.exit_code == 0
         assert "✅ Worktree removed successfully" in result.stdout
 
