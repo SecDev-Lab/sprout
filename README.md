@@ -109,6 +109,11 @@ sprout create another-branch
 # → Enter a value for 'DATABASE_URL': [user input required]
 ```
 
+## Documentation
+
+- [Architecture Overview](docs/sprout-cli/overview.md) - Design philosophy, architecture, and implementation details
+- [Detailed Usage Guide](docs/sprout-cli/usage.md) - Comprehensive usage examples and troubleshooting
+
 ## Development
 
 ### Setup
