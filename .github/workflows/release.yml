@@ -62,8 +62,8 @@ jobs:
       - name: Determine version bump type
         id: version
         run: |
-          # Extract current version from pyproject.toml
-          current_version=$(grep -E '^version = "' pyproject.toml | cut -d'"' -f2)
+          # Extract current version from __init__.py
+          current_version=$(grep -E '^__version__ = "' src/sprout/__init__.py | cut -d'"' -f2)
           echo "Current version: $current_version"
           
           # Analyze changelog to determine bump type
@@ -209,10 +209,7 @@ jobs:
       
       - name: Update version in files
         run: |
-          # Update pyproject.toml
-          sed -i 's/version = ".*"/version = "${{ needs.prepare-release.outputs.version }}"/' pyproject.toml
-          
-          # Update __init__.py
+          # Update __init__.py (pyproject.toml reads version from here dynamically)
           sed -i 's/__version__ = ".*"/__version__ = "${{ needs.prepare-release.outputs.version }}"/' src/sprout/__init__.py
           
           # Update CHANGELOG.md
@@ -228,7 +225,7 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add pyproject.toml src/sprout/__init__.py CHANGELOG.md
+          git add src/sprout/__init__.py CHANGELOG.md
           git commit -m "Release version ${{ needs.prepare-release.outputs.version }}"
       
       - name: Build package

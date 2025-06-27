@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "sprout-cli"
-version = "0.1.0"
+dynamic = ["version"]
 description = "CLI tool to automate git worktree and Docker Compose development workflows"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -40,6 +40,9 @@ dev = [
 
 [project.scripts]
 sprout = "sprout.__main__:main"
+
+[tool.hatch.version]
+path = "src/sprout/__init__.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/sprout"]
