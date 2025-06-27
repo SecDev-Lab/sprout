@@ -35,7 +35,7 @@ def git_repo(tmp_path):
         cwd=tmp_path,
         check=True,
     )
-    
+
     # Ensure we're on a branch named 'main'
     # First check current branch name
     result = subprocess.run(
@@ -46,7 +46,7 @@ def git_repo(tmp_path):
         check=True,
     )
     current_branch = result.stdout.strip()
-    
+
     # If not on 'main', rename the branch
     if current_branch != "main":
         subprocess.run(
