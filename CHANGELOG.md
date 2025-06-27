@@ -7,18 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-
-### Changed
-
-### Deprecated
-
-### Removed
-
-### Fixed
-
-### Security
-
 ## [1.0.0] - 2025-06-27
 
 ### Added
@@ -35,4 +23,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support for Python 3.11, 3.12, and 3.13
 
 [Unreleased]: https://github.com/SecDev-Lab/sprout/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/SecDev-Lab/sprout/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/SecDev-Lab/sprout/releases/tag/v1.0.0
