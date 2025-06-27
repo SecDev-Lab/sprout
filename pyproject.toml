@@ -54,7 +54,7 @@ include = [
 ]
 
 [tool.ruff]
-target-version = "1.0.0"
+target-version = "py311"
 line-length = 100
 
 [tool.ruff.lint]

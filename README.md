@@ -43,25 +43,49 @@ DB_PORT={{ auto_port() }}
 # DB_NAME=${DB_NAME}
 ```
 
-2. Create a new development environment:
+2. Create and navigate to a new development environment in one command:
 ```bash
-sprout create feature-branch
+cd $(sprout create feature-branch --path)
 ```
 
-3. Navigate to your new environment:
-```bash
-cd $(sprout path feature-branch)
-```
+This single command:
+- Creates a new git worktree for `feature-branch`
+- Generates a `.env` file from your template
+- Outputs the path to the new environment
+- Changes to that directory when wrapped in `cd $(...)`
 
-4. Start your services:
+3. Start your services:
 ```bash
 docker compose up -d
 ```
 
+### Alternative: Two-Step Process
+
+If you prefer to see the creation output first:
+```bash
+# Create the environment
+sprout create feature-branch
+
+# Then navigate to it
+cd $(sprout path feature-branch)
+```
+
 ## Commands
 
-### `sprout create <branch-name>`
+### `sprout create <branch-name> [--path]`
 Create a new development environment with automated setup.
+
+Options:
+- `--path`: Output only the worktree path (useful for shell command substitution)
+
+Examples:
+```bash
+# Create and see progress messages
+sprout create feature-xyz
+
+# Create and navigate in one command
+cd $(sprout create feature-xyz --path)
+```
 
 ### `sprout ls`
 List all managed development environments with their status.
