@@ -90,11 +90,46 @@ cd $(sprout create feature-xyz --path)
 ### `sprout ls`
 List all managed development environments with their status.
 
-### `sprout rm <branch-name>`
+The output includes index numbers that can be used with other commands:
+```bash
+sprout ls
+# Output:
+# ┏━━━━━━┳━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━━━━━━━━━┓
+# ┃ No.  ┃ Branch          ┃ Path            ┃ Status ┃ Last Modified    ┃
+# ┡━━━━━━╇━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━━━━━━━━━━━┩
+# │ 1    │ feature-auth    │ .sprout/feat... │        │ 2025-06-27 14:30 │
+# │ 2    │ bugfix-api      │ .sprout/bugf... │        │ 2025-06-27 15:45 │
+# └──────┴─────────────────┴─────────────────┴────────┴──────────────────┘
+```
+
+### `sprout rm <branch-name-or-index>`
 Remove a development environment (with confirmation prompts).
 
-### `sprout path <branch-name>`
+You can use either the branch name or the index number from `sprout ls`:
+```bash
+# Remove by branch name
+sprout rm feature-auth
+
+# Remove by index number
+sprout rm 1
+```
+
+### `sprout path <branch-name-or-index>`
 Get the filesystem path of a development environment.
+
+You can use either the branch name or the index number from `sprout ls`:
+```bash
+# Get path by branch name
+sprout path feature-auth
+# Output: /path/to/project/.sprout/feature-auth
+
+# Get path by index number
+sprout path 1
+# Output: /path/to/project/.sprout/feature-auth
+
+# Use with cd command
+cd $(sprout path 2)
+```
 
 ### `sprout --version`
 Show the version of sprout.
