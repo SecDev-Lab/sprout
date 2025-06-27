@@ -208,6 +208,7 @@ class TestIntegrationWorkflow:
         # Try to remove non-existent worktree - now just test the error message
         # without the actual removal since we removed stdin prompts
         from sprout.utils import worktree_exists
+
         assert not worktree_exists("nonexistent")
 
         # Try to get path of non-existent worktree
