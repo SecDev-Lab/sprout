@@ -244,7 +244,7 @@ def get_indexed_worktrees() -> list[WorktreeInfo]:
             sprout_worktrees.append(wt)
 
     # Sort by branch name for consistent indexing
-    sprout_worktrees.sort(key=lambda wt: wt.get("branch", wt.get("head", "")))
+    sprout_worktrees.sort(key=lambda wt: wt.get("branch") or wt.get("head") or "")
 
     return sprout_worktrees
 
