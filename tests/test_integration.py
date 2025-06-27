@@ -50,7 +50,7 @@ def git_repo(tmp_path):
     # If not on 'main', rename the branch
     if current_branch != "main":
         subprocess.run(
-            ["git", "branch", "-m", current_branch, "main"],
+            ["git", "branch", "-m", "main"],
             cwd=tmp_path,
             check=True,
         )
