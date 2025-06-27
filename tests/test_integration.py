@@ -64,14 +64,14 @@ class TestIntegrationWorkflow:
     """Test complete workflows."""
 
     def test_placeholder_substitution_from_env(self, git_repo, monkeypatch):
-        """Test that placeholders in .env.example are correctly substituted from environment variables."""
+        """Test that placeholders in .env.example are substituted from environment variables."""
         git_repo, default_branch = git_repo
         monkeypatch.chdir(git_repo)
-        
+
         # Set multiple environment variables
         monkeypatch.setenv("API_KEY", "test_api_key_123")
         monkeypatch.setenv("DATABASE_URL", "postgres://localhost/test")
-        
+
         # Create .env.example with various placeholder patterns
         env_example = git_repo / ".env.example"
         env_example.write_text(
@@ -83,17 +83,17 @@ class TestIntegrationWorkflow:
             "STATIC_VAR=fixed_value\n"
             "COMPOSE_VAR=${COMPOSE_VAR:-default}\n"
         )
-        
+
         # Create worktree - SECRET_TOKEN should be prompted but we can't test that
         # So let's set it too
         monkeypatch.setenv("SECRET_TOKEN", "secret123")
         result = runner.invoke(app, ["create", "test-branch"])
         assert result.exit_code == 0
-        
+
         # Verify .env was created with correct substitutions
         env_file = git_repo / ".sprout" / "test-branch" / ".env"
         env_content = env_file.read_text()
-        
+
         # Check environment variable substitutions
         assert "API_KEY=test_api_key_123" in env_content
         assert "DATABASE_URL=postgres://localhost/test" in env_content
