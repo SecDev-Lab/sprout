@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `--path` flag for `sprout create` command to output only the worktree path, enabling one-liner usage like `cd $(sprout create feature --path)`
 
 ### Changed
 - `sprout path` command now accepts index numbers in addition to branch names
