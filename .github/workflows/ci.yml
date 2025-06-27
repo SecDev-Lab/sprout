@@ -32,8 +32,7 @@ jobs:
 
       - name: Run tests with coverage
         run: |
-          source .venv/bin/activate
-          pytest --cov=sprout --cov-report=term-missing --cov-report=xml
+          uv run pytest --cov=sprout --cov-report=term-missing --cov-report=xml
 
       - name: Upload coverage to Codecov
         if: matrix.python-version == '3.11'
@@ -64,13 +63,11 @@ jobs:
 
       - name: Run ruff check
         run: |
-          source .venv/bin/activate
-          ruff check src tests
+          uv run ruff check src tests
 
       - name: Run ruff format check
         run: |
-          source .venv/bin/activate
-          ruff format --check src tests
+          uv run ruff format --check src tests
 
   typecheck:
     name: Type Check
@@ -94,8 +91,7 @@ jobs:
 
       - name: Run mypy
         run: |
-          source .venv/bin/activate
-          mypy src
+          uv run mypy src
 
   build:
     name: Build package

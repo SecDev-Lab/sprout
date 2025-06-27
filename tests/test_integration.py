@@ -184,6 +184,7 @@ class TestIntegrationWorkflow:
 
         # Test outside git repo using a separate temp directory
         import tempfile
+
         with tempfile.TemporaryDirectory() as non_git_tmpdir:
             non_git_dir = Path(non_git_tmpdir) / "not-a-repo"
             non_git_dir.mkdir()

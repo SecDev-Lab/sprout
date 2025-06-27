@@ -173,7 +173,5 @@ def worktree_exists(branch_name: BranchName) -> bool:
 
 def branch_exists(branch_name: BranchName) -> bool:
     """Check if a git branch exists."""
-    result = run_command(
-        ["git", "rev-parse", "--verify", f"refs/heads/{branch_name}"], check=False
-    )
+    result = run_command(["git", "rev-parse", "--verify", f"refs/heads/{branch_name}"], check=False)
     return result.returncode == 0
