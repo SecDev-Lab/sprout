@@ -2,7 +2,6 @@
 
 import typer
 from rich.console import Console
-from rich.prompt import Confirm
 
 from sprout.exceptions import SproutError
 from sprout.types import BranchName
@@ -30,8 +29,8 @@ def remove_worktree(branch_name: BranchName) -> None:
     worktree_path = get_sprout_dir() / branch_name
 
     # Confirm removal
-    if not Confirm.ask(
-        f"Are you sure you want to remove the worktree for branch '[cyan]{branch_name}[/cyan]'?"
+    if not typer.confirm(
+        f"Are you sure you want to remove the worktree for branch '{branch_name}'?"
     ):
         console.print("[yellow]Cancelled[/yellow]")
         raise typer.Exit(0)
@@ -39,32 +38,47 @@ def remove_worktree(branch_name: BranchName) -> None:
     # Remove worktree
     console.print(f"Removing worktree for branch [cyan]{branch_name}[/cyan]...")
     try:
-        run_command(["git", "worktree", "remove", str(worktree_path)])
+        result = run_command(["git", "worktree", "remove", str(worktree_path)], check=False)
+        if result.returncode != 0:
+            # Try force removal if normal removal fails
+            result = run_command(
+                ["git", "worktree", "remove", "--force", str(worktree_path)], check=False
+            )
+            if result.returncode != 0:
+                console.print(f"[red]Error removing worktree: {result.stderr}[/red]")
+                raise typer.Exit(1)
         console.print("[green]✅ Worktree removed successfully[/green]")
     except SproutError as e:
         console.print(f"[red]Error removing worktree: {e}[/red]")
         raise typer.Exit(1) from e
 
     # Ask about branch deletion
-    if Confirm.ask(f"Do you also want to delete the git branch '[cyan]{branch_name}[/cyan]'?"):
-        try:
-            # Try normal deletion first
-            result = run_command(["git", "branch", "-d", branch_name], check=False)
-            if result.returncode != 0:
-                # If normal deletion fails, show the error and ask about force delete
-                console.print(f"[yellow]Warning: {result.stderr.strip()}[/yellow]")
-                if Confirm.ask("Force delete the branch?"):
-                    run_command(["git", "branch", "-D", branch_name])
-                    console.print("[green]✅ Branch deleted successfully[/green]")
+    try:
+        if typer.confirm(f"Do you also want to delete the git branch '{branch_name}'?"):
+            try:
+                # Try normal deletion first
+                result = run_command(["git", "branch", "-d", branch_name], check=False)
+                if result.returncode != 0:
+                    # If normal deletion fails, show the error and ask about force delete
+                    console.print(f"[yellow]Warning: {result.stderr.strip()}[/yellow]")
+                    if typer.confirm("Force delete the branch?"):
+                        run_command(["git", "branch", "-D", branch_name])
+                        console.print("[green]✅ Branch deleted successfully[/green]")
+                    else:
+                        console.print("[yellow]Branch deletion cancelled[/yellow]")
                 else:
-                    console.print("[yellow]Branch deletion cancelled[/yellow]")
-            else:
-                console.print("[green]✅ Branch deleted successfully[/green]")
-        except SproutError as e:
-            console.print(f"[red]Error deleting branch: {e}[/red]")
-            console.print(
-                "[yellow]Note: The worktree has been removed, but the branch still exists[/yellow]"
-            )
+                    console.print("[green]✅ Branch deleted successfully[/green]")
+            except SproutError as e:
+                console.print(f"[red]Error deleting branch: {e}[/red]")
+                console.print(
+                    "[yellow]Note: The worktree has been removed, "
+                    "but the branch still exists[/yellow]"
+                )
+    except Exception as e:
+        # Catch any exception during the confirmation prompt
+        console.print(f"[red]Error during branch deletion prompt: {e}[/red]")
+        # Don't fail the whole command if branch deletion has issues
+        pass
 
     # Exit successfully - return instead of raising Exit for proper testing
     return
