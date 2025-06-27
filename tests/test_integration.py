@@ -35,6 +35,25 @@ def git_repo(tmp_path):
         cwd=tmp_path,
         check=True,
     )
+    
+    # Ensure we're on a branch named 'main'
+    # First check current branch name
+    result = subprocess.run(
+        ["git", "branch", "--show-current"],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    current_branch = result.stdout.strip()
+    
+    # If not on 'main', rename the branch
+    if current_branch != "main":
+        subprocess.run(
+            ["git", "branch", "-m", current_branch, "main"],
+            cwd=tmp_path,
+            check=True,
+        )
 
     # Create .env.example
     env_example = tmp_path / ".env.example"
