@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "sprout"
+name = "sprout-cli"
 version = "0.1.0"
 description = "CLI tool to automate git worktree and Docker Compose development workflows"
 readme = "README.md"
