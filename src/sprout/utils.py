@@ -8,6 +8,7 @@ import subprocess
 from pathlib import Path
 from typing import TypeAlias
 
+import typer
 from rich.console import Console
 
 from sprout.exceptions import SproutError
@@ -123,7 +124,7 @@ def find_available_port() -> PortNumber:
     raise SproutError("Could not find an available port after 1000 attempts")
 
 
-def parse_env_template(template_path: Path) -> str:
+def parse_env_template(template_path: Path, silent: bool = False) -> str:
     """Parse .env.example template and process placeholders."""
     if not template_path.exists():
         raise SproutError(f".env.example file not found at {template_path}")
@@ -155,7 +156,12 @@ def parse_env_template(template_path: Path) -> str:
             value = os.environ.get(var_name)
             if value is None:
                 # Prompt user for value
-                value = console.input(f"Enter a value for '{var_name}': ")
+                if silent:
+                    # Use stderr for prompts in silent mode to keep stdout clean
+                    typer.echo(f"Enter a value for '{var_name}': ", err=True, nl=False)
+                    value = input()
+                else:
+                    value = console.input(f"Enter a value for '{var_name}': ")
             return value
 
         line = re.sub(r"{{\s*([^}]+)\s*}}", replace_variable, line)

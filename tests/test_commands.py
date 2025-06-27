@@ -60,6 +60,54 @@ class TestCreateCommand:
         assert result.exit_code == 1
         assert "Not in a git repository" in result.stdout
 
+    def test_create_with_path_flag_success(self, mocker, tmp_path):
+        """Test successful creation with --path flag outputs only the path."""
+        # Set up test directory structure
+        project_dir = tmp_path / "project"
+        project_dir.mkdir()
+        sprout_dir = project_dir / ".sprout"
+        sprout_dir.mkdir()
+        env_example = project_dir / ".env.example"
+        env_example.write_text("TEST=value")
+
+        # Create the worktree directory that would be created by git command
+        worktree_dir = sprout_dir / "feature-branch"
+        worktree_dir.mkdir()
+
+        # Mock prerequisites
+        mocker.patch("sprout.commands.create.is_git_repository", return_value=True)
+        mocker.patch("sprout.commands.create.get_git_root", return_value=project_dir)
+        mocker.patch("sprout.commands.create.worktree_exists", return_value=False)
+        mocker.patch("sprout.commands.create.branch_exists", return_value=False)
+        mocker.patch("sprout.commands.create.ensure_sprout_dir", return_value=sprout_dir)
+        mocker.patch("sprout.commands.create.parse_env_template", return_value="ENV_VAR=value")
+
+        # Mock command execution
+        mock_run = mocker.patch("sprout.commands.create.run_command")
+
+        # Run command with --path flag
+        result = runner.invoke(app, ["create", "feature-branch", "--path"])
+
+        assert result.exit_code == 0
+        # Should output only the path, no other messages
+        assert result.stdout.strip() == str(worktree_dir)
+        # No Rich formatting in output
+        assert "[green]" not in result.stdout
+        assert "✅" not in result.stdout
+        assert mock_run.called
+
+    def test_create_with_path_flag_error(self, mocker):
+        """Test error handling with --path flag uses stderr."""
+        mocker.patch("sprout.commands.create.is_git_repository", return_value=False)
+
+        result = runner.invoke(app, ["create", "feature-branch", "--path"])
+
+        assert result.exit_code == 1
+        # Error should be in stderr, not stdout
+        assert "Error: Not in a git repository" in result.output
+        # stdout should be empty
+        assert result.stdout == ""
+
     def test_create_no_env_example(self, mocker):
         """Test error when .env.example doesn't exist."""
         mocker.patch("sprout.commands.create.is_git_repository", return_value=True)

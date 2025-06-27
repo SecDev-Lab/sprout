@@ -46,9 +46,14 @@ def create(
         ...,
         help="Name of the branch to create worktree for",
     ),
+    path: bool = typer.Option(
+        False,
+        "--path",
+        help="Output only the worktree path (for use with shell command substitution)",
+    ),
 ) -> None:
     """Create a new development environment."""
-    create_worktree(branch_name)
+    create_worktree(branch_name, path_only=path)
 
 
 @app.command()
