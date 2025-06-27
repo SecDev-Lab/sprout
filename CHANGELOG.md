@@ -20,14 +20,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CI/CD pipeline with GitHub Actions
 - Support for Python 3.11, 3.12, and 3.13
 
-### Changed
-
-### Deprecated
-
-### Removed
-
-### Fixed
-
-### Security
-
 [Unreleased]: https://github.com/SecDev-Lab/sprout/compare/v0.1.0...HEAD

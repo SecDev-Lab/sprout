@@ -67,16 +67,45 @@ jobs:
           echo "Current version: $current_version"
           
           # Analyze changelog to determine bump type
-          major_changes=$(sed -n '/## \[Unreleased\]/,/## \[/p' CHANGELOG.md | grep -E "^### (Removed)" || true)
-          minor_changes=$(sed -n '/## \[Unreleased\]/,/## \[/p' CHANGELOG.md | grep -E "^### (Added|Changed|Deprecated)" || true)
-          patch_changes=$(sed -n '/## \[Unreleased\]/,/## \[/p' CHANGELOG.md | grep -E "^### (Fixed|Security)" || true)
+          # Extract the Unreleased section
+          unreleased_section=$(sed -n '/## \[Unreleased\]/,/## \[/p' CHANGELOG.md)
           
-          # Determine bump type (check in order: major -> minor -> patch)
-          if [ -n "$major_changes" ]; then
+          # Check for sections with actual entries (lines starting with -)
+          major_entries=""
+          minor_entries=""
+          patch_entries=""
+          
+          # Check if Removed section has entries
+          if echo "$unreleased_section" | grep -q "^### Removed"; then
+            major_entries=$(echo "$unreleased_section" | sed -n '/### Removed/,/^###\|^##/p' | grep "^- " || true)
+          fi
+          
+          # Check if Added/Changed/Deprecated sections have entries
+          for section in "Added" "Changed" "Deprecated"; do
+            if echo "$unreleased_section" | grep -q "^### $section"; then
+              section_entries=$(echo "$unreleased_section" | sed -n "/### $section/,/^###\|^##/p" | grep "^- " || true)
+              if [ -n "$section_entries" ]; then
+                minor_entries="$minor_entries$section_entries"
+              fi
+            fi
+          done
+          
+          # Check if Fixed/Security sections have entries
+          for section in "Fixed" "Security"; do
+            if echo "$unreleased_section" | grep -q "^### $section"; then
+              section_entries=$(echo "$unreleased_section" | sed -n "/### $section/,/^###\|^##/p" | grep "^- " || true)
+              if [ -n "$section_entries" ]; then
+                patch_entries="$patch_entries$section_entries"
+              fi
+            fi
+          done
+          
+          # Determine bump type based on actual entries
+          if [ -n "$major_entries" ]; then
             bump_type="major"
-          elif [ -n "$minor_changes" ]; then
+          elif [ -n "$minor_entries" ]; then
             bump_type="minor"
-          elif [ -n "$patch_changes" ]; then
+          elif [ -n "$patch_entries" ]; then
             bump_type="patch"
           else
             # Default to patch if only individual items without category
