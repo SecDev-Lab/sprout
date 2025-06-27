@@ -7,8 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.0.0] - 2025-06-27
-
 ### Added
 - Initial implementation of sprout CLI tool
 - `create` command to create new git worktrees with Docker Compose support
@@ -22,5 +20,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CI/CD pipeline with GitHub Actions
 - Support for Python 3.11, 3.12, and 3.13
 
-[Unreleased]: https://github.com/SecDev-Lab/sprout/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/SecDev-Lab/sprout/releases/tag/v1.0.0
+[Unreleased]: https://github.com/SecDev-Lab/sprout/compare/v0.1.0...HEAD
