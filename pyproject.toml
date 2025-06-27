@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "sprout-cli"
-version = "1.0.0"
+dynamic = ["version"]
 description = "CLI tool to automate git worktree and Docker Compose development workflows"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -41,6 +41,9 @@ dev = [
 [project.scripts]
 sprout = "sprout.__main__:main"
 
+[tool.hatch.version]
+path = "src/sprout/__init__.py"
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/sprout"]
 
@@ -54,7 +57,7 @@ include = [
 ]
 
 [tool.ruff]
-target-version = "py311"
+target-version = "py313"
 line-length = 100
 
 [tool.ruff.lint]
@@ -66,6 +69,9 @@ select = [
     "B",  # flake8-bugbear
     "C4", # flake8-comprehensions
     "UP", # pyupgrade
+]
+ignore = [
+    "UP040",  # TypeAlias annotations - not compatible with typer
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -96,7 +102,7 @@ exclude_lines = [
 ]
 
 [tool.mypy]
-python_version = "1.0.0"
+python_version = "3.11"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
