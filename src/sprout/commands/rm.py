@@ -4,10 +4,10 @@ import typer
 from rich.console import Console
 
 from sprout.exceptions import SproutError
-from sprout.types import BranchName
 from sprout.utils import (
     get_sprout_dir,
     is_git_repository,
+    resolve_branch_identifier,
     run_command,
     worktree_exists,
 )
@@ -15,10 +15,23 @@ from sprout.utils import (
 console = Console()
 
 
-def remove_worktree(branch_name: BranchName) -> None:
-    """Remove a development environment."""
+def remove_worktree(identifier: str) -> None:
+    """Remove a development environment by branch name or index."""
     if not is_git_repository():
         console.print("[red]Error: Not in a git repository[/red]")
+        raise typer.Exit(1)
+
+    # Resolve identifier to branch name
+    branch_name = resolve_branch_identifier(identifier)
+
+    if branch_name is None:
+        if identifier.isdigit():
+            console.print(
+                f"[red]Error: Invalid index '{identifier}'. "
+                "Use 'sprout ls' to see valid indices.[/red]"
+            )
+        else:
+            console.print(f"[red]Error: Worktree for branch '{identifier}' does not exist[/red]")
         raise typer.Exit(1)
 
     # Check if worktree exists

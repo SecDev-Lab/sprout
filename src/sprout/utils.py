@@ -5,6 +5,7 @@ import random
 import re
 import socket
 import subprocess
+from datetime import datetime
 from pathlib import Path
 from typing import TypeAlias
 
@@ -12,7 +13,7 @@ import typer
 from rich.console import Console
 
 from sprout.exceptions import SproutError
-from sprout.types import BranchName
+from sprout.types import BranchName, WorktreeInfo
 
 # Type aliases
 PortNumber: TypeAlias = int
@@ -181,3 +182,90 @@ def branch_exists(branch_name: BranchName) -> bool:
     """Check if a git branch exists."""
     result = run_command(["git", "rev-parse", "--verify", f"refs/heads/{branch_name}"], check=False)
     return result.returncode == 0
+
+
+def get_indexed_worktrees() -> list[WorktreeInfo]:
+    """Get a list of sprout-managed worktrees with consistent ordering.
+
+    Returns:
+        List of WorktreeInfo dicts, sorted by branch name for consistent indexing.
+    """
+    if not is_git_repository():
+        raise SproutError("Not in a git repository")
+
+    sprout_dir = get_sprout_dir()
+
+    # Get worktree list from git
+    result = run_command(["git", "worktree", "list", "--porcelain"])
+
+    # Parse worktree output
+    worktrees: list[WorktreeInfo] = []
+    current_worktree: WorktreeInfo = {}
+
+    for line in result.stdout.strip().split("\n"):
+        if not line:
+            if current_worktree:
+                worktrees.append(current_worktree)
+                current_worktree = {}
+            continue
+
+        if line.startswith("worktree "):
+            current_worktree["path"] = Path(line[9:])
+        elif line.startswith("branch "):
+            branch_ref = line[7:]
+            # Strip refs/heads/ prefix if present
+            if branch_ref.startswith("refs/heads/"):
+                current_worktree["branch"] = branch_ref[11:]
+            else:
+                current_worktree["branch"] = branch_ref
+        elif line.startswith("HEAD "):
+            current_worktree["head"] = line[5:]
+
+    if current_worktree:
+        worktrees.append(current_worktree)
+
+    # Filter for sprout-managed worktrees
+    sprout_worktrees: list[WorktreeInfo] = []
+    current_path = Path.cwd().resolve()
+
+    for wt in worktrees:
+        wt_path = wt["path"].resolve()
+        if wt_path.parent == sprout_dir:
+            # Check if we're currently in this worktree
+            wt["is_current"] = current_path == wt_path or current_path.is_relative_to(wt_path)
+
+            # Get last modified time
+            if wt_path.exists():
+                stat = wt_path.stat()
+                wt["modified"] = datetime.fromtimestamp(stat.st_mtime)
+            else:
+                wt["modified"] = None
+
+            sprout_worktrees.append(wt)
+
+    # Sort by branch name for consistent indexing
+    sprout_worktrees.sort(key=lambda wt: wt.get("branch") or wt.get("head") or "")
+
+    return sprout_worktrees
+
+
+def resolve_branch_identifier(identifier: str) -> BranchName | None:
+    """Resolve a branch identifier (name or index) to a branch name.
+
+    Args:
+        identifier: Either a branch name or a 1-based index number
+
+    Returns:
+        Branch name if found, None otherwise
+    """
+    # Check if identifier is a number
+    if identifier.isdigit():
+        index = int(identifier)
+        worktrees = get_indexed_worktrees()
+
+        if 1 <= index <= len(worktrees):
+            return worktrees[index - 1].get("branch", worktrees[index - 1].get("head", ""))
+        return None
+
+    # Otherwise treat as branch name
+    return identifier

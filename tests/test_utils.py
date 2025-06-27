@@ -228,3 +228,87 @@ class TestCommandRunner:
 
         with pytest.raises(SproutError, match="Command failed"):
             run_command(["git", "status"])
+
+
+class TestIndexedWorktrees:
+    """Test indexed worktree functionality."""
+
+    def test_get_indexed_worktrees(self, mocker, tmp_path):
+        """Test get_indexed_worktrees returns sorted list."""
+        sprout_dir = tmp_path / ".sprout"
+        sprout_dir.mkdir()
+
+        # Create test directories
+        feature_b_dir = sprout_dir / "feature-b"
+        feature_b_dir.mkdir()
+        feature_a_dir = sprout_dir / "feature-a"
+        feature_a_dir.mkdir()
+
+        mocker.patch("sprout.utils.is_git_repository", return_value=True)
+        mocker.patch("sprout.utils.get_sprout_dir", return_value=sprout_dir)
+        mocker.patch("pathlib.Path.cwd", return_value=tmp_path)
+
+        # Mock git worktree list output (unsorted)
+        mock_result = Mock()
+        mock_result.stdout = f"""worktree {feature_b_dir}
+HEAD def456
+branch refs/heads/feature-b
+
+worktree {feature_a_dir}
+HEAD abc123
+branch refs/heads/feature-a
+"""
+        mocker.patch("sprout.utils.run_command", return_value=mock_result)
+
+        from sprout.utils import get_indexed_worktrees
+
+        worktrees = get_indexed_worktrees()
+
+        assert len(worktrees) == 2
+        # Check that they're sorted by branch name
+        assert worktrees[0]["branch"] == "feature-a"
+        assert worktrees[1]["branch"] == "feature-b"
+
+    def test_resolve_branch_identifier_with_name(self):
+        """Test resolve_branch_identifier with branch name."""
+        from sprout.utils import resolve_branch_identifier
+
+        result = resolve_branch_identifier("feature-branch")
+        assert result == "feature-branch"
+
+    def test_resolve_branch_identifier_with_valid_index(self, mocker, tmp_path):
+        """Test resolve_branch_identifier with valid index."""
+        sprout_dir = tmp_path / ".sprout"
+        sprout_dir.mkdir()
+        feature_dir = sprout_dir / "feature-a"
+        feature_dir.mkdir()
+
+        mocker.patch("sprout.utils.is_git_repository", return_value=True)
+        mocker.patch("sprout.utils.get_sprout_dir", return_value=sprout_dir)
+        mocker.patch("pathlib.Path.cwd", return_value=tmp_path)
+
+        mock_result = Mock()
+        mock_result.stdout = f"""worktree {feature_dir}
+HEAD abc123
+branch refs/heads/feature-a
+"""
+        mocker.patch("sprout.utils.run_command", return_value=mock_result)
+
+        from sprout.utils import resolve_branch_identifier
+
+        result = resolve_branch_identifier("1")
+        assert result == "feature-a"
+
+    def test_resolve_branch_identifier_with_invalid_index(self, mocker):
+        """Test resolve_branch_identifier with invalid index."""
+        mocker.patch("sprout.utils.is_git_repository", return_value=True)
+        mocker.patch("sprout.utils.get_sprout_dir", return_value=Path("/project/.sprout"))
+
+        mock_result = Mock()
+        mock_result.stdout = ""  # No worktrees
+        mocker.patch("sprout.utils.run_command", return_value=mock_result)
+
+        from sprout.utils import resolve_branch_identifier
+
+        result = resolve_branch_identifier("99")
+        assert result is None

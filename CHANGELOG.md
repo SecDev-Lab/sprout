@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `--path` flag for `sprout create` command to output only the worktree path, enabling one-liner usage like `cd $(sprout create feature --path)`
 
 ### Changed
+- Enhanced `sprout path` and `sprout rm` commands to accept index numbers from `sprout ls` output, enabling faster navigation without typing full branch names (e.g., `cd $(sprout path 2)` instead of `cd $(sprout path feature-long-branch-name)`)
 
 ### Deprecated
 
