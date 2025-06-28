@@ -93,10 +93,10 @@ PORT2={{{{ auto_port() }}}}
 
         for i in range(3):
             env_content = (worktree_path / f"service-{i}" / ".env").read_text()
-            lines = env_content.strip().split('\n')
+            lines = env_content.strip().split("\n")
             for line in lines:
-                if '=' in line and not line.startswith('#'):
-                    port = int(line.split('=')[1])
+                if "=" in line and not line.startswith("#"):
+                    port = int(line.split("=")[1])
                     assert port not in all_ports, f"Port {port} is duplicated"
                     all_ports.add(port)
 
@@ -128,9 +128,9 @@ PORT2={{ auto_port() }}
         # Get ports from first worktree
         env1 = (git_repo / ".sprout" / "branch1" / "service" / ".env").read_text()
         ports1 = set()
-        for line in env1.strip().split('\n'):
-            if '=' in line and not line.startswith('#'):
-                ports1.add(int(line.split('=')[1]))
+        for line in env1.strip().split("\n"):
+            if "=" in line and not line.startswith("#"):
+                ports1.add(int(line.split("=")[1]))
 
         # Create second worktree
         result = runner.invoke(app, ["create", "branch2"])
@@ -139,9 +139,9 @@ PORT2={{ auto_port() }}
         # Get ports from second worktree
         env2 = (git_repo / ".sprout" / "branch2" / "service" / ".env").read_text()
         ports2 = set()
-        for line in env2.strip().split('\n'):
-            if '=' in line and not line.startswith('#'):
-                ports2.add(int(line.split('=')[1]))
+        for line in env2.strip().split("\n"):
+            if "=" in line and not line.startswith("#"):
+                ports2.add(int(line.split("=")[1]))
 
         # Ensure no overlap
         assert len(ports1.intersection(ports2)) == 0, "Ports should not overlap between worktrees"

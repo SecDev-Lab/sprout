@@ -40,12 +40,14 @@ class TestCreateCommand:
         mock_run = mocker.patch("sprout.commands.create.run_command")
         # Mock git ls-files to return .env.example
         mock_run.side_effect = lambda cmd, **kwargs: (
-            Mock(stdout=".env.example\n", returncode=0) if cmd[1] == "ls-files"
+            Mock(stdout=".env.example\n", returncode=0)
+            if cmd[1] == "ls-files"
             else Mock(returncode=0)
         )
         # Mock git ls-files to return .env.example
         mock_run.side_effect = lambda cmd, **kwargs: (
-            Mock(stdout=".env.example\n", returncode=0) if cmd[1] == "ls-files"
+            Mock(stdout=".env.example\n", returncode=0)
+            if cmd[1] == "ls-files"
             else Mock(returncode=0)
         )
 
@@ -96,7 +98,8 @@ class TestCreateCommand:
         mock_run = mocker.patch("sprout.commands.create.run_command")
         # Mock git ls-files to return .env.example
         mock_run.side_effect = lambda cmd, **kwargs: (
-            Mock(stdout=".env.example\n", returncode=0) if cmd[1] == "ls-files"
+            Mock(stdout=".env.example\n", returncode=0)
+            if cmd[1] == "ls-files"
             else Mock(returncode=0)
         )
 
