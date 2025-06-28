@@ -179,6 +179,54 @@ sprout create another-branch
 # → Enter a value for 'DATABASE_URL': [user input required]
 ```
 
+## Monorepo Tutorial
+
+Try out the monorepo functionality with the included sample:
+
+1. **Navigate to the sample monorepo**:
+   ```bash
+   cd sample/monorepo
+   ```
+
+2. **Set required environment variables**:
+   ```bash
+   export API_KEY="your-api-key"
+   export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/myapp"
+   export REACT_APP_API_KEY="your-frontend-api-key"
+   export JWT_SECRET="your-jwt-secret"
+   export SMTP_USER="your-smtp-username"
+   export SMTP_PASS="your-smtp-password"
+   ```
+
+3. **Create a development environment**:
+   ```bash
+   sprout create monorepo-feature
+   ```
+
+4. **Navigate to the created environment**:
+   ```bash
+   cd .sprout/monorepo-feature
+   ```
+
+5. **Verify all services have unique ports**:
+   ```bash
+   find . -name "*.env" -exec echo "=== {} ===" \; -exec cat {} \;
+   ```
+
+6. **Start all services**:
+   ```bash
+   cd sample/monorepo
+   docker-compose up -d
+   ```
+
+The sample includes:
+- **Root service**: Database and Redis with shared configuration
+- **Frontend**: React app with API integration
+- **Backend**: REST API with authentication
+- **Shared**: Utilities with message queue and monitoring
+
+Each service gets unique, conflict-free ports automatically!
+
 ## Documentation
 
 - [Architecture Overview](docs/sprout-cli/overview.md) - Design philosophy, architecture, and implementation details
