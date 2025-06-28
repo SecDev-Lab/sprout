@@ -83,8 +83,8 @@ def get_used_ports() -> PortSet:
     if not sprout_dir.exists():
         return used_ports
 
-    # Scan all .env files in .sprout/*/
-    for env_file in sprout_dir.glob("*/.env"):
+    # Scan all .env files recursively in .sprout/
+    for env_file in sprout_dir.rglob("*.env"):
         if env_file.is_file():
             try:
                 content = env_file.read_text()
@@ -125,8 +125,16 @@ def find_available_port() -> PortNumber:
     raise SproutError("Could not find an available port after 1000 attempts")
 
 
-def parse_env_template(template_path: Path, silent: bool = False) -> str:
-    """Parse .env.example template and process placeholders."""
+def parse_env_template(
+    template_path: Path, silent: bool = False, used_ports: PortSet | None = None
+) -> str:
+    """Parse .env.example template and process placeholders.
+
+    Args:
+        template_path: Path to the .env.example template file
+        silent: If True, use stderr for prompts to keep stdout clean
+        used_ports: Set of ports already in use (in addition to system-wide used ports)
+    """
     if not template_path.exists():
         raise SproutError(f".env.example file not found at {template_path}")
 
@@ -138,6 +146,9 @@ def parse_env_template(template_path: Path, silent: bool = False) -> str:
     lines: list[str] = []
     # Track used ports within this file to avoid duplicates
     file_ports: PortSet = set()
+    # Include any additional used ports passed in
+    if used_ports:
+        file_ports.update(used_ports)
 
     for line in content.splitlines():
         # Process {{ auto_port() }} placeholders
@@ -156,13 +167,24 @@ def parse_env_template(template_path: Path, silent: bool = False) -> str:
             # Check environment variable first
             value = os.environ.get(var_name)
             if value is None:
-                # Prompt user for value
+                # Create a relative path for display
+                try:
+                    display_path = template_path.relative_to(Path.cwd())
+                except ValueError:
+                    display_path = template_path
+
+                # Prompt user for value with file context
                 if silent:
                     # Use stderr for prompts in silent mode to keep stdout clean
-                    typer.echo(f"Enter a value for '{var_name}': ", err=True, nl=False)
+                    prompt = f"Enter a value for '{var_name}' (from {display_path}): "
+                    typer.echo(prompt, err=True, nl=False)
                     value = input()
                 else:
-                    value = console.input(f"Enter a value for '{var_name}': ")
+                    prompt = (
+                        f"Enter a value for '[cyan]{var_name}[/cyan]' "
+                        f"(from [dim]{display_path}[/dim]): "
+                    )
+                    value = console.input(prompt)
             return value
 
         line = re.sub(r"{{\s*([^}]+)\s*}}", replace_variable, line)

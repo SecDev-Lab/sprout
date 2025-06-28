@@ -28,7 +28,7 @@ pip install -e ".[dev]"
 
 ## Quick Start
 
-1. Create a `.env.example` template in your project root:
+1. Create a `.env.example` template in your project root (and optionally in subdirectories):
 ```env
 # API Configuration
 API_KEY={{ API_KEY }}
@@ -41,6 +41,16 @@ DB_PORT={{ auto_port() }}
 # Example: Docker Compose variables (preserved as-is)
 # sprout will NOT process ${...} syntax - it's passed through unchanged
 # DB_NAME=${DB_NAME}
+```
+
+For monorepo or multi-service projects, you can create `.env.example` files in subdirectories:
+```
+repo/
+  .env.example          # Root configuration
+  service-a/
+    .env.example        # Service A specific config
+  service-b/
+    .env.example        # Service B specific config
 ```
 
 2. Create and navigate to a new development environment in one command:
@@ -145,8 +155,9 @@ sprout supports two types of placeholders in `.env.example`:
 
 2. **Auto Port Assignment**: `{{ auto_port() }}`
    - Automatically assigns available ports
-   - Avoids conflicts with other sprout environments
+   - Avoids conflicts across ALL services in ALL sprout environments
    - Checks system port availability
+   - Ensures global uniqueness even in monorepo setups
 
 3. **Docker Compose Syntax (Preserved)**: `${VARIABLE}`
    - NOT processed by sprout - passed through as-is
@@ -167,6 +178,54 @@ sprout create feature-branch
 sprout create another-branch
 # → Enter a value for 'DATABASE_URL': [user input required]
 ```
+
+## Monorepo Tutorial
+
+Try out the monorepo functionality with the included sample:
+
+1. **Navigate to the sample monorepo**:
+   ```bash
+   cd sample/monorepo
+   ```
+
+2. **Set required environment variables**:
+   ```bash
+   export API_KEY="your-api-key"
+   export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/myapp"
+   export REACT_APP_API_KEY="your-frontend-api-key"
+   export JWT_SECRET="your-jwt-secret"
+   export SMTP_USER="your-smtp-username"
+   export SMTP_PASS="your-smtp-password"
+   ```
+
+3. **Create a development environment**:
+   ```bash
+   sprout create monorepo-feature
+   ```
+
+4. **Navigate to the created environment**:
+   ```bash
+   cd .sprout/monorepo-feature
+   ```
+
+5. **Verify all services have unique ports**:
+   ```bash
+   find . -name "*.env" -exec echo "=== {} ===" \; -exec cat {} \;
+   ```
+
+6. **Start all services**:
+   ```bash
+   cd sample/monorepo
+   docker-compose up -d
+   ```
+
+The sample includes:
+- **Root service**: Database and Redis with shared configuration
+- **Frontend**: React app with API integration
+- **Backend**: REST API with authentication
+- **Shared**: Utilities with message queue and monitoring
+
+Each service gets unique, conflict-free ports automatically!
 
 ## Documentation
 
