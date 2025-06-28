@@ -111,26 +111,27 @@ class TestCreateCommand:
     def test_create_no_env_example(self, mocker):
         """Test error when .env.example doesn't exist."""
         mocker.patch("sprout.commands.create.is_git_repository", return_value=True)
-        mocker.patch("sprout.commands.create.get_git_root", return_value=Path("/project"))
+        mock_git_root = Path("/project")
+        mocker.patch("sprout.commands.create.get_git_root", return_value=mock_git_root)
 
-        mock_env_example = Mock()
-        mock_env_example.exists.return_value = False
-        mocker.patch("pathlib.Path.__truediv__", return_value=mock_env_example)
+        # Mock rglob to return empty list
+        mocker.patch.object(Path, "rglob", return_value=[])
 
         result = runner.invoke(app, ["create", "feature-branch"])
 
         assert result.exit_code == 1
-        assert ".env.example file not found" in result.stdout
+        assert "No .env.example files found" in result.stdout
 
     def test_create_worktree_exists(self, mocker):
         """Test error when worktree already exists."""
         mocker.patch("sprout.commands.create.is_git_repository", return_value=True)
-        mocker.patch("sprout.commands.create.get_git_root", return_value=Path("/project"))
+        mock_git_root = Path("/project")
+        mocker.patch("sprout.commands.create.get_git_root", return_value=mock_git_root)
         mocker.patch("sprout.commands.create.worktree_exists", return_value=True)
 
-        mock_env_example = Mock()
-        mock_env_example.exists.return_value = True
-        mocker.patch("pathlib.Path.__truediv__", return_value=mock_env_example)
+        # Mock rglob to return a fake .env.example
+        mock_env_example = Path("/project/.env.example")
+        mocker.patch.object(Path, "rglob", return_value=[mock_env_example])
 
         result = runner.invoke(app, ["create", "feature-branch"])
 

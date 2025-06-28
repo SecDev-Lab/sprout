@@ -1,5 +1,6 @@
 """Implementation of the create command."""
 
+import re
 from pathlib import Path
 from typing import Never
 
@@ -12,6 +13,7 @@ from sprout.utils import (
     branch_exists,
     ensure_sprout_dir,
     get_git_root,
+    get_used_ports,
     is_git_repository,
     parse_env_template,
     run_command,
@@ -33,14 +35,16 @@ def create_worktree(branch_name: BranchName, path_only: bool = False) -> Never:
         raise typer.Exit(1)
 
     git_root = get_git_root()
-    env_example = git_root / ".env.example"
 
-    if not env_example.exists():
+    # Find all .env.example files in the repository
+    env_examples = list(git_root.rglob(".env.example"))
+
+    if not env_examples:
         if not path_only:
-            console.print("[red]Error: .env.example file not found[/red]")
-            console.print(f"Expected at: {env_example}")
+            console.print("[red]Error: No .env.example files found[/red]")
+            console.print(f"Expected at least one .env.example file in: {git_root}")
         else:
-            typer.echo(f"Error: .env.example file not found at {env_example}", err=True)
+            typer.echo(f"Error: No .env.example files found in {git_root}", err=True)
         raise typer.Exit(1)
 
     # Check if worktree already exists
@@ -77,13 +81,44 @@ def create_worktree(branch_name: BranchName, path_only: bool = False) -> Never:
             typer.echo(f"Error creating worktree: {e}", err=True)
         raise typer.Exit(1) from e
 
-    # Generate .env file
+    # Generate .env files
     if not path_only:
-        console.print("Generating .env file...")
+        console.print(f"Generating .env files from {len(env_examples)} template(s)...")
+
+    # Get all currently used ports to avoid conflicts
+    all_used_ports = get_used_ports()
+    session_ports: set[int] = set()
+
     try:
-        env_content = parse_env_template(env_example, silent=path_only)
-        env_file = worktree_path / ".env"
-        env_file.write_text(env_content)
+        for env_example in env_examples:
+            # Calculate relative path from git root
+            relative_dir = env_example.parent.relative_to(git_root)
+
+            # Create target directory in worktree if needed
+            if relative_dir != Path("."):
+                target_dir = worktree_path / relative_dir
+                target_dir.mkdir(parents=True, exist_ok=True)
+                env_file = target_dir / ".env"
+            else:
+                env_file = worktree_path / ".env"
+
+            # Parse template with combined used ports
+            env_content = parse_env_template(
+                env_example,
+                silent=path_only,
+                used_ports=all_used_ports | session_ports
+            )
+
+            # Extract ports from generated content and add to session_ports
+            port_matches = re.findall(r"=(\d{4,5})\b", env_content)
+            for port_str in port_matches:
+                port = int(port_str)
+                if 1024 <= port <= 65535:
+                    session_ports.add(port)
+
+            # Write the .env file
+            env_file.write_text(env_content)
+
     except SproutError as e:
         if not path_only:
             console.print(f"[red]Error generating .env file: {e}[/red]")

@@ -219,7 +219,7 @@ class TestIntegrationWorkflow:
         (git_repo / ".env.example").unlink()
         result = runner.invoke(app, ["create", "another-branch"])
         assert result.exit_code == 1
-        assert ".env.example file not found" in result.stdout
+        assert "No .env.example files found" in result.stdout
 
         # Test outside git repo using a separate temp directory
         import tempfile
