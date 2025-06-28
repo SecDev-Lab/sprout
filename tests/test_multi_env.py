@@ -1,5 +1,7 @@
 """Tests for multiple .env.example files functionality."""
 
+import subprocess
+
 from typer.testing import CliRunner
 
 from sprout.cli import app
@@ -34,6 +36,10 @@ API_PORT={{ auto_port() }}
 DB_PASSWORD={{ DB_PASSWORD }}
 DB_PORT={{ auto_port() }}
 """)
+
+        # Add files to git
+        subprocess.run(["git", "add", "."], cwd=git_repo, check=True)
+        subprocess.run(["git", "commit", "-m", "Add services"], cwd=git_repo, check=True)
 
         # Create worktree
         result = runner.invoke(app, ["create", "feature-multi"])
@@ -73,6 +79,10 @@ PORT1={{{{ auto_port() }}}}
 PORT2={{{{ auto_port() }}}}
 """)
 
+        # Add files to git
+        subprocess.run(["git", "add", "."], cwd=git_repo, check=True)
+        subprocess.run(["git", "commit", "-m", "Add services"], cwd=git_repo, check=True)
+
         # Create worktree
         result = runner.invoke(app, ["create", "test-ports"])
         assert result.exit_code == 0
@@ -106,6 +116,10 @@ PORT2={{{{ auto_port() }}}}
 PORT1={{ auto_port() }}
 PORT2={{ auto_port() }}
 """)
+
+        # Add files to git
+        subprocess.run(["git", "add", "."], cwd=git_repo, check=True)
+        subprocess.run(["git", "commit", "-m", "Add service"], cwd=git_repo, check=True)
 
         # Create first worktree
         result = runner.invoke(app, ["create", "branch1"])
@@ -142,6 +156,10 @@ PORT2={{ auto_port() }}
         nested_path = git_repo / "services" / "backend" / "api"
         nested_path.mkdir(parents=True)
         (nested_path / ".env.example").write_text("NESTED_PORT={{ auto_port() }}")
+
+        # Add files to git
+        subprocess.run(["git", "add", "."], cwd=git_repo, check=True)
+        subprocess.run(["git", "commit", "-m", "Add nested service"], cwd=git_repo, check=True)
 
         # Create worktree
         result = runner.invoke(app, ["create", "nested-test"])

@@ -38,6 +38,16 @@ class TestCreateCommand:
 
         # Mock command execution
         mock_run = mocker.patch("sprout.commands.create.run_command")
+        # Mock git ls-files to return .env.example
+        mock_run.side_effect = lambda cmd, **kwargs: (
+            Mock(stdout=".env.example\n", returncode=0) if cmd[1] == "ls-files"
+            else Mock(returncode=0)
+        )
+        # Mock git ls-files to return .env.example
+        mock_run.side_effect = lambda cmd, **kwargs: (
+            Mock(stdout=".env.example\n", returncode=0) if cmd[1] == "ls-files"
+            else Mock(returncode=0)
+        )
 
         # Run command
         result = runner.invoke(app, ["create", "feature-branch"])
@@ -84,6 +94,11 @@ class TestCreateCommand:
 
         # Mock command execution
         mock_run = mocker.patch("sprout.commands.create.run_command")
+        # Mock git ls-files to return .env.example
+        mock_run.side_effect = lambda cmd, **kwargs: (
+            Mock(stdout=".env.example\n", returncode=0) if cmd[1] == "ls-files"
+            else Mock(returncode=0)
+        )
 
         # Run command with --path flag
         result = runner.invoke(app, ["create", "feature-branch", "--path"])
@@ -114,8 +129,9 @@ class TestCreateCommand:
         mock_git_root = Path("/project")
         mocker.patch("sprout.commands.create.get_git_root", return_value=mock_git_root)
 
-        # Mock rglob to return empty list
-        mocker.patch.object(Path, "rglob", return_value=[])
+        # Mock git ls-files to return empty list
+        mock_run = mocker.patch("sprout.commands.create.run_command")
+        mock_run.return_value = Mock(stdout="", returncode=0)
 
         result = runner.invoke(app, ["create", "feature-branch"])
 
@@ -129,9 +145,13 @@ class TestCreateCommand:
         mocker.patch("sprout.commands.create.get_git_root", return_value=mock_git_root)
         mocker.patch("sprout.commands.create.worktree_exists", return_value=True)
 
-        # Mock rglob to return a fake .env.example
-        mock_env_example = Path("/project/.env.example")
-        mocker.patch.object(Path, "rglob", return_value=[mock_env_example])
+        # Mock git ls-files to return .env.example
+        mock_run = mocker.patch("sprout.commands.create.run_command")
+        mock_run.return_value = Mock(stdout=".env.example\n", returncode=0)
+
+        # Mock Path.exists to return True for .env.example
+        mock_exists = mocker.patch("pathlib.Path.exists")
+        mock_exists.return_value = True
 
         result = runner.invoke(app, ["create", "feature-branch"])
 

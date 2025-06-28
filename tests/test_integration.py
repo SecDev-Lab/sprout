@@ -57,6 +57,10 @@ def git_repo(tmp_path):
         "COMPOSE_VAR=${COMPOSE_VAR:-default}\n"
     )
 
+    # Add .env.example to git
+    subprocess.run(["git", "add", ".env.example"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "commit", "-m", "Add .env.example"], cwd=tmp_path, check=True)
+
     return tmp_path, default_branch
 
 
@@ -83,6 +87,10 @@ class TestIntegrationWorkflow:
             "STATIC_VAR=fixed_value\n"
             "COMPOSE_VAR=${COMPOSE_VAR:-default}\n"
         )
+
+        # Add to git
+        subprocess.run(["git", "add", ".env.example"], cwd=git_repo, check=True)
+        subprocess.run(["git", "commit", "-m", "Add .env.example"], cwd=git_repo, check=True)
 
         # Create worktree - SECRET_TOKEN should be prompted but we can't test that
         # So let's set it too

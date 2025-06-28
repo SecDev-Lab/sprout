@@ -172,14 +172,19 @@ def parse_env_template(
                     display_path = template_path.relative_to(Path.cwd())
                 except ValueError:
                     display_path = template_path
-                
+
                 # Prompt user for value with file context
                 if silent:
                     # Use stderr for prompts in silent mode to keep stdout clean
-                    typer.echo(f"Enter a value for '{var_name}' (from {display_path}): ", err=True, nl=False)
+                    prompt = f"Enter a value for '{var_name}' (from {display_path}): "
+                    typer.echo(prompt, err=True, nl=False)
                     value = input()
                 else:
-                    value = console.input(f"Enter a value for '[cyan]{var_name}[/cyan]' (from [dim]{display_path}[/dim]): ")
+                    prompt = (
+                        f"Enter a value for '[cyan]{var_name}[/cyan]' "
+                        f"(from [dim]{display_path}[/dim]): "
+                    )
+                    value = console.input(prompt)
             return value
 
         line = re.sub(r"{{\s*([^}]+)\s*}}", replace_variable, line)
