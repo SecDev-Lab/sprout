@@ -13,7 +13,7 @@ A CLI tool to automate git worktree and Docker Compose development workflows.
 ## Installation
 
 ```bash
-pip install sprout
+pip install sprout-cli
 ```
 
 For development:
