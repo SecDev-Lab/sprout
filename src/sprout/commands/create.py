@@ -36,8 +36,14 @@ def create_worktree(branch_name: BranchName, path_only: bool = False) -> Never:
 
     git_root = get_git_root()
 
-    # Find all .env.example files in the repository
-    env_examples = list(git_root.rglob(".env.example"))
+    # Find all .env.example files that are tracked by git
+    result = run_command(["git", "ls-files", "*.env.example", "**/*.env.example"])
+    env_examples = []
+    if result.stdout.strip():
+        for file_path in result.stdout.strip().split("\n"):
+            full_path = git_root / file_path
+            if full_path.exists():
+                env_examples.append(full_path)
 
     if not env_examples:
         if not path_only:
