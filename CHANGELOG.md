@@ -8,8 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Support for repositories without `.env.example` files - `sprout create` now works in any git repository
 
 ### Changed
+- `sprout create` behavior when no `.env.example` files exist: shows warning instead of error and continues creating worktree
 
 ### Deprecated
 
