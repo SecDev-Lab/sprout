@@ -22,9 +22,11 @@ sprout create feature-branch
 
 This command performs:
 1. Creates worktree in `.sprout/feature-branch`
-2. Generates `.env` from `.env.example` template
-3. Prompts for required environment variables
-4. Automatically assigns port numbers
+2. Generates `.env` from `.env.example` template (if template exists)
+3. Prompts for required environment variables (if `.env.example` exists)
+4. Automatically assigns port numbers (if `.env.example` exists)
+
+**Note**: If no `.env.example` files are found, sprout will show a warning but continue creating the worktree without `.env` generation.
 
 ### 2. List Development Environments
 
@@ -177,8 +179,14 @@ REDIS_PORT={{ auto_port() }}    # Might assign 3003
 - Execute from Git repository root directory
 - Ensure `.git` directory exists
 
-### ".env.example file not found" Error
-- Create `.env.example` in project root
+### Working Without .env.example Files
+As of recent versions, sprout works perfectly fine without `.env.example` files:
+- If no `.env.example` files exist, sprout will show a warning but continue
+- The worktree will be created successfully without `.env` generation
+- This is useful for projects that don't need environment variable templating
+
+If you want to add `.env` generation later:
+- Create `.env.example` in project root or subdirectories  
 - Use the template syntax described above
 
 ### "Could not find an available port" Error

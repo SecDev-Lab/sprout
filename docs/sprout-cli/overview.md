@@ -8,9 +8,10 @@
 
 ### 1. Automated Development Environment Setup
 - Create git worktrees
-- Automatically generate `.env` files from `.env.example` templates
+- Automatically generate `.env` files from `.env.example` templates (when templates exist)
 - Automatic port number assignment (collision avoidance)
 - Interactive environment variable configuration
+- Works in any git repository, with or without `.env.example` files
 
 ### 2. Unified Management
 - Centralize all worktrees in `.sprout/` directory
@@ -42,9 +43,9 @@
 ├── .git/
 ├── .sprout/              # sprout management directory
 │   └── <branch-name>/    # each worktree
-│       ├── .env          # auto-generated environment config
+│       ├── .env          # auto-generated environment config (if .env.example exists)
 │       └── ...           # source code
-├── .env.example          # template
+├── .env.example          # template (optional)
 └── compose.yaml          # Docker Compose config
 ```
 

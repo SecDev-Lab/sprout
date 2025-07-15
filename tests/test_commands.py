@@ -126,20 +126,37 @@ class TestCreateCommand:
         # stdout should be empty
         assert result.stdout == ""
 
-    def test_create_no_env_example(self, mocker):
-        """Test error when .env.example doesn't exist."""
+    def test_create_no_env_example(self, mocker, tmp_path):
+        """Test success when .env.example doesn't exist."""
         mocker.patch("sprout.commands.create.is_git_repository", return_value=True)
-        mock_git_root = Path("/project")
+        mock_git_root = tmp_path / "project"
+        mock_git_root.mkdir()
         mocker.patch("sprout.commands.create.get_git_root", return_value=mock_git_root)
+        mocker.patch("sprout.commands.create.worktree_exists", return_value=False)
+        sprout_dir = tmp_path / ".sprout"
+        sprout_dir.mkdir()
+        mocker.patch("sprout.commands.create.ensure_sprout_dir", return_value=sprout_dir)
+        mocker.patch("sprout.commands.create.branch_exists", return_value=False)
 
-        # Mock git ls-files to return empty list
+        # Mock git ls-files to return empty list (no .env.example files)
         mock_run = mocker.patch("sprout.commands.create.run_command")
         mock_run.return_value = Mock(stdout="", returncode=0)
 
-        result = runner.invoke(app, ["create", "feature-branch"])
+        # Change to project directory to make relative path calculation work
+        import os
 
-        assert result.exit_code == 1
-        assert "No .env.example files found" in result.stdout
+        old_cwd = os.getcwd()
+        os.chdir(str(mock_git_root))
+
+        try:
+            result = runner.invoke(app, ["create", "feature-branch"])
+
+            assert result.exit_code == 0
+            assert "Warning: No .env.example files found" in result.stdout
+            assert "Workspace 'feature-branch' created successfully!" in result.stdout
+            assert "No .env files generated (no .env.example templates found)" in result.stdout
+        finally:
+            os.chdir(old_cwd)
 
     def test_create_worktree_exists(self, mocker):
         """Test error when worktree already exists."""
@@ -160,6 +177,28 @@ class TestCreateCommand:
 
         assert result.exit_code == 1
         assert "Worktree for branch 'feature-branch' already exists" in result.stdout
+
+    def test_create_without_env_example_path_mode(self, mocker, tmp_path):
+        """Test path mode with no .env.example files."""
+        mocker.patch("sprout.commands.create.is_git_repository", return_value=True)
+        mock_git_root = tmp_path / "project"
+        mock_git_root.mkdir()
+        mocker.patch("sprout.commands.create.get_git_root", return_value=mock_git_root)
+        mocker.patch("sprout.commands.create.worktree_exists", return_value=False)
+        sprout_dir = tmp_path / ".sprout"
+        sprout_dir.mkdir()
+        mocker.patch("sprout.commands.create.ensure_sprout_dir", return_value=sprout_dir)
+        mocker.patch("sprout.commands.create.branch_exists", return_value=False)
+
+        # Mock git ls-files to return empty list (no .env.example files)
+        mock_run = mocker.patch("sprout.commands.create.run_command")
+        mock_run.return_value = Mock(stdout="", returncode=0)
+
+        result = runner.invoke(app, ["create", "feature-branch", "--path"])
+
+        assert result.exit_code == 0
+        # In path mode, only the path should be printed to stdout
+        assert result.stdout.strip() == str(sprout_dir / "feature-branch")
 
 
 class TestLsCommand:
