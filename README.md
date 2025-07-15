@@ -28,7 +28,9 @@ pip install -e ".[dev]"
 
 ## Quick Start
 
-1. Create a `.env.example` template in your project root (and optionally in subdirectories):
+**Note**: Sprout works in any git repository. `.env.example` files are optional - if you don't have them, sprout will simply create worktrees without `.env` generation.
+
+1. (Optional) Create a `.env.example` template in your project root (and optionally in subdirectories) for automatic `.env` generation:
 ```env
 # API Configuration
 API_KEY={{ API_KEY }}
@@ -58,9 +60,13 @@ repo/
 cd $(sprout create feature-branch --path)
 ```
 
+**What happens when you run `sprout create`:**
+- If `.env.example` files exist: Sprout will generate corresponding `.env` files with populated variables and unique port assignments
+- If no `.env.example` files exist: Sprout will show a warning and create the worktree without `.env` generation
+
 This single command:
 - Creates a new git worktree for `feature-branch`
-- Generates a `.env` file from your template
+- Generates `.env` files from your templates (if `.env.example` files exist)
 - Outputs the path to the new environment
 - Changes to that directory when wrapped in `cd $(...)`
 

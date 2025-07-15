@@ -223,11 +223,12 @@ class TestIntegrationWorkflow:
         result = runner.invoke(app, ["path", "nonexistent"])
         assert result.exit_code == 1
 
-        # Remove .env.example and try to create
+        # Remove .env.example and try to create (should succeed now)
         (git_repo / ".env.example").unlink()
         result = runner.invoke(app, ["create", "another-branch"])
-        assert result.exit_code == 1
-        assert "No .env.example files found" in result.stdout
+        assert result.exit_code == 0
+        assert "Warning: No .env.example files found" in result.stdout
+        assert "Workspace 'another-branch' created successfully!" in result.stdout
 
         # Test outside git repo using a separate temp directory
         import tempfile

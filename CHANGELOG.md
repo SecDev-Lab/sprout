@@ -10,11 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Support for multiple `.env.example` files throughout the repository, enabling monorepo workflows
 - Recursive scanning of `.env` files for port allocation to ensure global uniqueness across all services
+- Support for repositories without `.env.example` files - `sprout create` now works in any git repository
 
 ### Changed
 - Port allocation now ensures uniqueness across all services in all worktrees, preventing Docker host port conflicts
 - `sprout create` now processes all `.env.example` files found in the repository while maintaining directory structure
 - Only git-tracked `.env.example` files are now processed, preventing unwanted processing of files in `.sprout/` worktrees
+- `sprout create` behavior when no `.env.example` files exist: shows warning instead of error and continues creating worktree
 
 ### Deprecated
 
