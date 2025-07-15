@@ -144,6 +144,7 @@ class TestCreateCommand:
 
         # Change to project directory to make relative path calculation work
         import os
+
         old_cwd = os.getcwd()
         os.chdir(str(mock_git_root))
 
