@@ -109,7 +109,10 @@ def create_worktree(branch_name: BranchName, path_only: bool = False) -> Never:
 
                 # Parse template with combined used ports
                 env_content = parse_env_template(
-                    env_example, silent=path_only, used_ports=all_used_ports | session_ports
+                    env_example,
+                    silent=path_only,
+                    used_ports=all_used_ports | session_ports,
+                    branch_name=branch_name,
                 )
 
                 # Extract ports from generated content and add to session_ports

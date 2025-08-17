@@ -198,6 +198,47 @@ class TestIntegrationWorkflow:
         worktree_path = git_repo / ".sprout" / "existing-branch"
         assert worktree_path.exists()
 
+    def test_branch_placeholder(self, git_repo, monkeypatch):
+        """Test that {{ branch() }} placeholder is replaced with branch name."""
+        git_repo, default_branch = git_repo
+        monkeypatch.chdir(git_repo)
+        monkeypatch.setenv("API_KEY", "test_key")
+
+        # Create .env.example with branch() placeholder
+        env_example = git_repo / ".env.example"
+        env_example.write_text(
+            "# Branch-specific configuration\n"
+            "BRANCH_NAME={{ branch() }}\n"
+            "SERVICE_NAME=myapp-{{ branch() }}\n"
+            "API_KEY={{ API_KEY }}\n"
+            "PORT={{ auto_port() }}\n"
+            "COMPOSE_VAR=${BRANCH_NAME}\n"
+        )
+
+        # Add to git
+        subprocess.run(["git", "add", ".env.example"], cwd=git_repo, check=True)
+        subprocess.run(
+            ["git", "commit", "-m", "Add .env.example with branch placeholder"],
+            cwd=git_repo,
+            check=True,
+        )
+
+        # Create worktree
+        branch_name = "feature-auth"
+        result = runner.invoke(app, ["create", branch_name])
+        assert result.exit_code == 0
+
+        # Verify .env was created with correct branch name substitution
+        env_file = git_repo / ".sprout" / branch_name / ".env"
+        env_content = env_file.read_text()
+
+        # Check branch name substitutions
+        assert f"BRANCH_NAME={branch_name}" in env_content
+        assert f"SERVICE_NAME=myapp-{branch_name}" in env_content
+        assert "API_KEY=test_key" in env_content
+        assert "PORT=" in env_content  # Should have a port number
+        assert "COMPOSE_VAR=${BRANCH_NAME}" in env_content  # Docker syntax preserved
+
     def test_error_cases(self, git_repo, monkeypatch, tmp_path):
         """Test various error conditions."""
         git_repo, default_branch = git_repo

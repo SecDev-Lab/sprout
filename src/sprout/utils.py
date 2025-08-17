@@ -126,7 +126,10 @@ def find_available_port() -> PortNumber:
 
 
 def parse_env_template(
-    template_path: Path, silent: bool = False, used_ports: PortSet | None = None
+    template_path: Path,
+    silent: bool = False,
+    used_ports: PortSet | None = None,
+    branch_name: str | None = None,
 ) -> str:
     """Parse .env.example template and process placeholders.
 
@@ -134,6 +137,7 @@ def parse_env_template(
         template_path: Path to the .env.example template file
         silent: If True, use stderr for prompts to keep stdout clean
         used_ports: Set of ports already in use (in addition to system-wide used ports)
+        branch_name: Branch name to use for {{ branch() }} placeholders
     """
     if not template_path.exists():
         raise SproutError(f".env.example file not found at {template_path}")
@@ -161,6 +165,10 @@ def parse_env_template(
 
         line = re.sub(r"{{\s*auto_port\(\)\s*}}", replace_auto_port, line)
 
+        # Process {{ branch() }} placeholders
+        if branch_name:
+            line = re.sub(r"{{\s*branch\(\)\s*}}", branch_name, line)
+
         # Process {{ VARIABLE }} placeholders
         def replace_variable(match: re.Match[str]) -> str:
             var_name = match.group(1).strip()
@@ -187,7 +195,8 @@ def parse_env_template(
                     value = console.input(prompt)
             return value
 
-        line = re.sub(r"{{\s*([^}]+)\s*}}", replace_variable, line)
+        # Only match variables that don't look like function calls (no parentheses)
+        line = re.sub(r"{{\s*([^}()]+)\s*}}", replace_variable, line)
 
         lines.append(line)
 
