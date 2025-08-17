@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Support for `{{ branch() }}` placeholder in `.env.example` templates - replaced with the current branch/subtree name
 
 ### Changed
 

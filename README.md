@@ -40,6 +40,10 @@ API_PORT={{ auto_port() }}
 DB_HOST=localhost
 DB_PORT={{ auto_port() }}
 
+# Branch-specific Configuration
+SERVICE_NAME=myapp-{{ branch() }}
+DEPLOYMENT_ENV={{ branch() }}
+
 # Example: Docker Compose variables (preserved as-is)
 # sprout will NOT process ${...} syntax - it's passed through unchanged
 # DB_NAME=${DB_NAME}
@@ -152,7 +156,7 @@ Show the version of sprout.
 
 ## Template Syntax
 
-sprout supports two types of placeholders in `.env.example`:
+sprout supports three types of placeholders in `.env.example`:
 
 1. **Variable Placeholders**: `{{ VARIABLE_NAME }}`
    - **First**: Checks if the variable exists in your environment (e.g., `export API_KEY=xxx`)
@@ -165,7 +169,12 @@ sprout supports two types of placeholders in `.env.example`:
    - Checks system port availability
    - Ensures global uniqueness even in monorepo setups
 
-3. **Docker Compose Syntax (Preserved)**: `${VARIABLE}`
+3. **Branch Name**: `{{ branch() }}`
+   - Replaced with the current branch/subtree name
+   - Useful for branch-specific configurations
+   - Example: `SERVICE_NAME=myapp-{{ branch() }}` becomes `SERVICE_NAME=myapp-feature-auth`
+
+4. **Docker Compose Syntax (Preserved)**: `${VARIABLE}`
    - NOT processed by sprout - passed through as-is
    - Useful for Docker Compose variable substitution
    - Example: `${DB_NAME:-default}` remains unchanged in generated `.env`

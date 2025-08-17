@@ -179,6 +179,47 @@ class TestEnvTemplateParser:
         result = parse_env_template(template)
         assert result == "COMPOSE_VAR=${COMPOSE_VAR:-default}"
 
+    def test_parse_env_template_branch_placeholder(self, tmp_path):
+        """Test parsing {{ branch() }} placeholders."""
+        template = tmp_path / ".env.example"
+        template.write_text("BRANCH_NAME={{ branch() }}\nFEATURE={{ branch() }}_feature")
+
+        result = parse_env_template(template, branch_name="feature-auth")
+        assert result == "BRANCH_NAME=feature-auth\nFEATURE=feature-auth_feature"
+
+    def test_parse_env_template_branch_placeholder_none(self, tmp_path):
+        """Test {{ branch() }} placeholder when branch_name is None."""
+        template = tmp_path / ".env.example"
+        template.write_text("BRANCH={{ branch() }}")
+
+        # When branch_name is None, placeholder should remain unchanged
+        result = parse_env_template(template, branch_name=None)
+        assert result == "BRANCH={{ branch() }}"
+
+    def test_parse_env_template_mixed_placeholders(self, tmp_path, mocker):
+        """Test parsing mixed placeholders in one template."""
+        mocker.patch("sprout.utils.find_available_port", return_value=8080)
+        mocker.patch.dict(os.environ, {"API_KEY": "secret"})
+        mocker.patch("sprout.utils.console.input", return_value="password123")
+
+        template = tmp_path / ".env.example"
+        template.write_text(
+            "API_KEY={{ API_KEY }}\n"
+            "PORT={{ auto_port() }}\n"
+            "BRANCH={{ branch() }}\n"
+            "DB_PASS={{ DB_PASS }}\n"
+            "COMPOSE_VAR=${COMPOSE_VAR}"
+        )
+
+        result = parse_env_template(template, branch_name="feature-xyz")
+        assert result == (
+            "API_KEY=secret\n"
+            "PORT=8080\n"
+            "BRANCH=feature-xyz\n"
+            "DB_PASS=password123\n"
+            "COMPOSE_VAR=${COMPOSE_VAR}"
+        )
+
     def test_parse_env_template_file_not_found(self, tmp_path):
         """Test error when template file doesn't exist."""
         template = tmp_path / "nonexistent.env"
