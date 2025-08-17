@@ -126,8 +126,10 @@ def find_available_port() -> PortNumber:
 
 
 def parse_env_template(
-    template_path: Path, silent: bool = False, used_ports: PortSet | None = None,
-    branch_name: str | None = None
+    template_path: Path,
+    silent: bool = False,
+    used_ports: PortSet | None = None,
+    branch_name: str | None = None,
 ) -> str:
     """Parse .env.example template and process placeholders.
 

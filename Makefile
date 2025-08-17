@@ -12,7 +12,7 @@ lint:
 # Format code using ruff
 format:
 	@echo "Formatting code..."
-	uv run ruff check --fix
+	uv run ruff format
 
 # Run tests
 test:
