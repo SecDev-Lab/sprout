@@ -215,4 +215,3 @@ class TestCreateEnvFiles:
             create_env_files(silent=True)
             # Should not print anything in silent mode
             mock_console.print.assert_not_called()
-

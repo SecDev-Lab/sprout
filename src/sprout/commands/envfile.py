@@ -166,4 +166,3 @@ def _show_summary(
         table.add_row("[red]Failed[/red]", str(len(errors)))
 
     console.print(table)
-
