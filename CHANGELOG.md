@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `envfile` command to create `.env` files from `.env.example` templates recursively in the current directory without creating worktrees
+- `--force` flag for `envfile` command to overwrite existing `.env` files
+- `--dry-run` flag for `envfile` command to preview what would be created without actually creating files
+- `--silent` flag for `envfile` command to suppress output except for prompts
 
 ### Changed
 

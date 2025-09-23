@@ -5,6 +5,7 @@ from rich.console import Console
 
 from sprout import __version__
 from sprout.commands.create import create_worktree
+from sprout.commands.envfile import create_env_files
 from sprout.commands.ls import list_worktrees
 from sprout.commands.path import get_worktree_path
 from sprout.commands.rm import remove_worktree
@@ -82,6 +83,29 @@ def path(
 ) -> None:
     """Get the path of a development environment."""
     get_worktree_path(identifier)
+
+
+@app.command()
+def envfile(
+    force: bool = typer.Option(
+        False,
+        "--force",
+        "-f",
+        help="Overwrite existing .env files",
+    ),
+    dry_run: bool = typer.Option(
+        False,
+        "--dry-run",
+        help="Show what would be created without creating files",
+    ),
+    silent: bool = typer.Option(
+        False,
+        "--silent",
+        help="Suppress output except for prompts",
+    ),
+) -> None:
+    """Create .env files from .env.example templates recursively."""
+    create_env_files(force=force, dry_run=dry_run, silent=silent)
 
 
 if __name__ == "__main__":
