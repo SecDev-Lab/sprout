@@ -239,6 +239,61 @@ class TestIntegrationWorkflow:
         assert "PORT=" in env_content  # Should have a port number
         assert "COMPOSE_VAR=${BRANCH_NAME}" in env_content  # Docker syntax preserved
 
+    def test_default_values(self, git_repo, monkeypatch):
+        """Test that default values work correctly in .env.example templates."""
+        git_repo, default_branch = git_repo
+        monkeypatch.chdir(git_repo)
+
+        # Set only some environment variables
+        monkeypatch.setenv("SET_VAR", "from_environment")
+        # UNSET_VAR is not set - should use default
+
+        # Create .env.example with default values
+        env_example = git_repo / ".env.example"
+        env_example.write_text(
+            "# Test default values\n"
+            "SET_VAR={{ SET_VAR | default_value }}\n"
+            "UNSET_VAR={{ UNSET_VAR | localhost }}\n"
+            "EMPTY_VAR={{ EMPTY_VAR | }}\n"
+            "PORT={{ auto_port() | 8080 }}\n"
+            "BRANCH={{ branch() | develop }}\n"
+            "NO_DEFAULT={{ NO_DEFAULT }}\n"  # Will be prompted
+        )
+
+        # Add to git
+        subprocess.run(["git", "add", ".env.example"], cwd=git_repo, check=True)
+        subprocess.run(
+            ["git", "commit", "-m", "Add .env.example with defaults"],
+            cwd=git_repo,
+            check=True,
+        )
+
+        # Set NO_DEFAULT to avoid prompt
+        monkeypatch.setenv("NO_DEFAULT", "prompted_value")
+
+        # Create worktree
+        branch_name = "feature-test"
+        result = runner.invoke(app, ["create", branch_name])
+        assert result.exit_code == 0
+
+        # Verify .env was created with correct values
+        env_file = git_repo / ".sprout" / branch_name / ".env"
+        env_content = env_file.read_text()
+
+        # Check that environment variable overrides default
+        assert "SET_VAR=from_environment" in env_content
+        # Check that default is used when variable is not set
+        assert "UNSET_VAR=localhost" in env_content
+        # Check empty string default
+        assert "EMPTY_VAR=" in env_content or "EMPTY_VAR=\n" in env_content
+        # Check that auto_port generates a port (default not used)
+        assert "PORT=" in env_content
+        assert "PORT=8080" not in env_content  # Should be a generated port
+        # Check that branch name is used (not default)
+        assert f"BRANCH={branch_name}" in env_content
+        # Check prompted value
+        assert "NO_DEFAULT=prompted_value" in env_content
+
     def test_error_cases(self, git_repo, monkeypatch, tmp_path):
         """Test various error conditions."""
         git_repo, default_branch = git_repo

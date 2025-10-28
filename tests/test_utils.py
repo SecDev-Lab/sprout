@@ -220,6 +220,99 @@ class TestEnvTemplateParser:
             "COMPOSE_VAR=${COMPOSE_VAR}"
         )
 
+    def test_parse_env_template_variable_with_default(self, tmp_path, mocker):
+        """Test parsing {{ VARIABLE | default }} when variable is not set."""
+        # Ensure the variable is not in environment
+        mocker.patch.dict(os.environ, {}, clear=False)
+        if "TEST_VAR" in os.environ:
+            del os.environ["TEST_VAR"]
+
+        template = tmp_path / ".env.example"
+        template.write_text("TEST_VAR={{ TEST_VAR | localhost }}")
+
+        result = parse_env_template(template)
+        assert result == "TEST_VAR=localhost"
+
+    def test_parse_env_template_variable_with_default_env_set(self, tmp_path, mocker):
+        """Test that environment variable overrides default value."""
+        mocker.patch.dict(os.environ, {"TEST_VAR": "custom_value"})
+
+        template = tmp_path / ".env.example"
+        template.write_text("TEST_VAR={{ TEST_VAR | localhost }}")
+
+        result = parse_env_template(template)
+        assert result == "TEST_VAR=custom_value"
+
+    def test_parse_env_template_variable_with_empty_default(self, tmp_path, mocker):
+        """Test parsing {{ VARIABLE | }} with empty string as default."""
+        mocker.patch.dict(os.environ, {}, clear=False)
+        if "EMPTY_VAR" in os.environ:
+            del os.environ["EMPTY_VAR"]
+
+        template = tmp_path / ".env.example"
+        template.write_text("EMPTY_VAR={{ EMPTY_VAR | }}")
+
+        result = parse_env_template(template)
+        assert result == "EMPTY_VAR="
+
+    def test_parse_env_template_variable_whitespace_trimming(self, tmp_path, mocker):
+        """Test that whitespace is trimmed from default values."""
+        mocker.patch.dict(os.environ, {}, clear=False)
+        if "TEST_VAR" in os.environ:
+            del os.environ["TEST_VAR"]
+
+        template = tmp_path / ".env.example"
+        template.write_text("TEST_VAR={{ TEST_VAR |   localhost   }}")
+
+        result = parse_env_template(template)
+        assert result == "TEST_VAR=localhost"
+
+    def test_parse_env_template_branch_with_default(self, tmp_path):
+        """Test parsing {{ branch() | default }} when branch_name is None."""
+        template = tmp_path / ".env.example"
+        template.write_text("BRANCH={{ branch() | main }}")
+
+        result = parse_env_template(template, branch_name=None)
+        assert result == "BRANCH=main"
+
+    def test_parse_env_template_branch_with_default_branch_set(self, tmp_path):
+        """Test that branch_name overrides default value."""
+        template = tmp_path / ".env.example"
+        template.write_text("BRANCH={{ branch() | main }}")
+
+        result = parse_env_template(template, branch_name="feature-xyz")
+        assert result == "BRANCH=feature-xyz"
+
+    def test_parse_env_template_auto_port_with_default(self, tmp_path, mocker):
+        """Test {{ auto_port() | default }} - default is captured but not used."""
+        mocker.patch("sprout.utils.find_available_port", return_value=9000)
+
+        template = tmp_path / ".env.example"
+        template.write_text("PORT={{ auto_port() | 8080 }}")
+
+        # auto_port() always generates a port, so default is not used
+        result = parse_env_template(template)
+        assert result == "PORT=9000"
+
+    def test_parse_env_template_mixed_with_defaults(self, tmp_path, mocker):
+        """Test parsing mixed placeholders with default values."""
+        mocker.patch("sprout.utils.find_available_port", return_value=8080)
+        mocker.patch.dict(os.environ, {"SET_VAR": "from_env"}, clear=False)
+        if "UNSET_VAR" in os.environ:
+            del os.environ["UNSET_VAR"]
+
+        template = tmp_path / ".env.example"
+        template.write_text(
+            "SET_VAR={{ SET_VAR | default1 }}\n"
+            "UNSET_VAR={{ UNSET_VAR | default2 }}\n"
+            "PORT={{ auto_port() | 3000 }}\n"
+            "BRANCH={{ branch() | develop }}\n"
+            "EMPTY={{ EMPTY | }}"
+        )
+
+        result = parse_env_template(template, branch_name=None)
+        assert result == ("SET_VAR=from_env\nUNSET_VAR=default2\nPORT=8080\nBRANCH=develop\nEMPTY=")
+
     def test_parse_env_template_file_not_found(self, tmp_path):
         """Test error when template file doesn't exist."""
         template = tmp_path / "nonexistent.env"

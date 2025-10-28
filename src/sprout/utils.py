@@ -155,26 +155,56 @@ def parse_env_template(
         file_ports.update(used_ports)
 
     for line in content.splitlines():
-        # Process {{ auto_port() }} placeholders
+        # Process {{ auto_port() | default }} placeholders
         def replace_auto_port(match: re.Match[str]) -> str:
+            # Extract default value if present (group 1)
+            default_value = match.group(1)
+            if default_value is not None:
+                default_value = default_value.strip()
+
+            # Generate available port
             port = find_available_port()
             while port in file_ports:
                 port = find_available_port()
             file_ports.add(port)
             return str(port)
 
-        line = re.sub(r"{{\s*auto_port\(\)\s*}}", replace_auto_port, line)
+        line = re.sub(r"{{\s*auto_port\(\)(?:\s*\|\s*([^}]*))?\s*}}", replace_auto_port, line)
 
-        # Process {{ branch() }} placeholders
-        if branch_name:
-            line = re.sub(r"{{\s*branch\(\)\s*}}", branch_name, line)
+        # Process {{ branch() | default }} placeholders
+        def replace_branch(match: re.Match[str]) -> str:
+            # Extract default value if present (group 1)
+            default_value = match.group(1)
+            if default_value is not None:
+                default_value = default_value.strip()
 
-        # Process {{ VARIABLE }} placeholders
+            # Use branch_name if provided, otherwise use default
+            if branch_name:
+                return branch_name
+            elif default_value is not None:
+                return default_value
+            else:
+                # No branch name and no default - keep placeholder unchanged
+                return match.group(0)
+
+        line = re.sub(r"{{\s*branch\(\)(?:\s*\|\s*([^}]*))?\s*}}", replace_branch, line)
+
+        # Process {{ VARIABLE | default }} placeholders
         def replace_variable(match: re.Match[str]) -> str:
             var_name = match.group(1).strip()
+            # Extract default value if present (group 2)
+            default_value = match.group(2)
+            if default_value is not None:
+                default_value = default_value.strip()
+
             # Check environment variable first
             value = os.environ.get(var_name)
             if value is None:
+                # If default value is provided, use it
+                if default_value is not None:
+                    return default_value
+
+                # No default value - prompt user for value
                 # Create a relative path for display
                 try:
                     display_path = template_path.relative_to(Path.cwd())
@@ -196,7 +226,8 @@ def parse_env_template(
             return value
 
         # Only match variables that don't look like function calls (no parentheses)
-        line = re.sub(r"{{\s*([^}()]+)\s*}}", replace_variable, line)
+        # Now also captures optional | default_value
+        line = re.sub(r"{{\s*([^}()]+?)(?:\s*\|\s*([^}]*))?\s*}}", replace_variable, line)
 
         lines.append(line)
 

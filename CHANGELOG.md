@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Support for default values in `.env.example` templates using `{{ VARIABLE | default_value }}` syntax
+  - Works with environment variables: `{{ API_KEY | dev-key }}` - uses default when variable is not set
+  - Works with function placeholders: `{{ branch() | main }}` - uses default when branch name is not provided
+  - Supports empty string as default: `{{ VAR | }}` - uses empty string when variable is not set
+  - Whitespace around default values is automatically trimmed
+  - Environment variables always override default values when set
 
 ### Changed
 
